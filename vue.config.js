@@ -1,4 +1,14 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
-  transpileDependencies: true
+  transpileDependencies: true,
+
+  //反向代理解决跨域问题
+  devServer:{
+    proxy:{
+      "/adminapi":{
+        target:"http://localhost:3000",
+        changeOrigin:true
+      }
+    }
+  }
 })

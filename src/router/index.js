@@ -1,25 +1,74 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-
+import Login from '../views/Login.vue'
+import MainBox from '../views/MainBox.vue'
+import Home from '../views/home/Home.vue'
+import Center from '../views/center/Center.vue'
+import RoutesConfig from './config'
+import store from '@/store/index'
 const routes = [
   {
-    path: '/',
-    name: 'home',
-    component: HomeView
+    path: "/login",
+    name: 'login',
+    component: Login,
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
-  }
+    path: "/MainBox",
+    name: 'MainBox',
+    component: MainBox,
+  },
 ]
 
 const router = createRouter({
   history: createWebHashHistory(),
   routes
 })
+router.addRoute("MainBox", {
+  path: "/index",
+  component: Home
+})
+router.addRoute("MainBox", {
+  path: "/center",
+  component: Center
+})
+// //路由遍历加载
+// RoutesConfig.forEach(item=>{
+//   router.addRoute("MainBox",item)
+// })
+
+//路由拦截
+//每次路由拦截之前
+router.beforeEach((to, form, next) => {
+  if (to.name === "login") {
+    next()
+  } else {
+    if (!localStorage.getItem("token")) {
+      next({
+        path: "/login"
+      })
+    } else {
+      if (!store.state.isGetterRouter) {
+        ConfigRouter();
+        next({
+          path: to.fullPath
+        });
+      } else {
+        next()
+      }
+    }
+    // else {
+    //   ConfigRouter();
+    //   next();
+    // }
+
+  }
+})
+
+const ConfigRouter = () => {
+  RoutesConfig.forEach(item => {
+    router.addRoute("MainBox", item)
+  })
+  //改变isGetterRouter = true
+  store.commit("changeGetterRouter", true)
+}
 
 export default router
