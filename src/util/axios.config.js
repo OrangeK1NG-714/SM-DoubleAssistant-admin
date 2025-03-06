@@ -36,7 +36,7 @@ axios.interceptors.response.use(
             localStorage.removeItem("token")
             window.location.href="#/login"
         }
-        console.log(12321);
+        console.log(123321);
         
         return Promise.reject(error);
     }
