@@ -38,6 +38,7 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from 'element-plus'
 import axios from "axios";
 const handleLogin = () => {};
 //表单绑定的响应式对象
@@ -71,13 +72,16 @@ const submitForm = () => {
   //1.  校验表单
   loginFormRef.value.validate((valid) => {
     if (valid) {
-      console.log(loginForm);
-      localStorage.setItem("token", "kerwin");
-      axios.get("/users").then(res=>{
+      // console.log(loginForm);
+      // localStorage.setItem("token", "kerwin");
+      axios.post("/adminapi/user/login", loginForm).then((res) => {
         console.log(res.data);
-        
-      })
-      router.push("/index");
+        if(res.data.ActionType==="OK"){
+          router.push("/index");
+        }else{
+          ElMessage.error('用户名和密码不匹配')
+        }
+      });
     }
   });
   //2.  拿到表单数据，提交后台
