@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 // 添加请求拦截器
 axios.interceptors.request.use(
@@ -7,7 +7,7 @@ axios.interceptors.request.use(
         const token = localStorage.getItem("token");
         //添加token令牌
         config.headers.Authorization = `Bearer ${token}`
-
+        
         return config;
     },
     function (error) {
@@ -22,12 +22,14 @@ axios.interceptors.response.use(
         // 对响应数据做些什么
         // console.log('响应拦截器 - 响应到达前', response);
         // console.log(response.headers);
-        const { authorization } = response.headers
+        const { authorization } = response.headers;
         authorization && localStorage.setItem("token", authorization)
         // 例如：只返回响应数据
         return response;
     },
     function (error) {
+        console.log(error);
+        
         // 对响应错误做些什么
         // console.log('响应拦截器 - 响应错误', error);
         // 例如：处理 HTTP 错误状态码

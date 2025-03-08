@@ -38,8 +38,10 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { ElMessage } from 'element-plus'
+import { ElMessage } from "element-plus";
 import axios from "axios";
+import { useStore } from "vuex";
+const store = useStore();
 const handleLogin = () => {};
 //表单绑定的响应式对象
 const loginForm = reactive({
@@ -76,10 +78,11 @@ const submitForm = () => {
       // localStorage.setItem("token", "kerwin");
       axios.post("/adminapi/user/login", loginForm).then((res) => {
         console.log(res.data);
-        if(res.data.ActionType==="OK"){
+        if (res.data.ActionType === "OK") {
+          store.commit("changeUserInfo", res.data.data);
           router.push("/index");
-        }else{
-          ElMessage.error('用户名和密码不匹配')
+        } else {
+          ElMessage.error("用户名和密码不匹配");
         }
       });
     }

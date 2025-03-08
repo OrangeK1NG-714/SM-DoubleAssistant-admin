@@ -7,7 +7,7 @@
       <span>3D扫描数字化后台管理系统</span>
     </div>
     <div class="right">
-      <span>欢迎 admin 回来</span>
+      <span>欢迎 {{ $store.state.userInfo.username }} 回来</span>
       <el-dropdown>
         <span class="el-dropdown-link">
           <el-icon :size="20" color="white"> <User /> </el-icon
@@ -40,6 +40,7 @@ router.push("/center")
 
 const handleLogout=()=>{
   localStorage.removeItem("token")
+  store.commit("clearUserInfo")
   router.push("/login")
 }
 </script>
