@@ -1,11 +1,11 @@
 import axios from 'axios'
-function upload(url, userForm) {
+function upload(path, userForm) {
 
-    const formData = new FormData();
+    const params = new FormData();
     for (let i in userForm) {
-        formData.append(i, userForm[i])
+        params.append(i, userForm[i])
     }
-    return axios.post(url, formData,
+    return axios.post(path, params,
         {
             headers: {
                 'Content-Type': 'multipart/form-data'
