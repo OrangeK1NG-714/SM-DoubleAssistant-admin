@@ -47,6 +47,8 @@ router.beforeEach((to, form, next) => {
       })
     } else {
       if (!store.state.isGetterRouter) {
+        //删除所有嵌套路由
+        router.removeRoute("MainBox")
         ConfigRouter();
         next({
           path: to.fullPath
@@ -64,11 +66,28 @@ router.beforeEach((to, form, next) => {
 })
 
 const ConfigRouter = () => {
+
+  if (!router.hasRoute("MainBox")) {
+    router.addRoute(
+      {
+        path: "/MainBox",
+        name: 'MainBox',
+        component: MainBox,
+      }
+    )
+  }
+
   RoutesConfig.forEach(item => {
-    router.addRoute("MainBox", item)
+    checkPermission(item) && router.addRoute("MainBox", item)
   })
   //改变isGetterRouter = true
   store.commit("changeGetterRouter", true)
 }
 
+const checkPermission = (item) => {
+  if (item.requireAdmin) {
+    return store.state.userInfo.role === 1
+  }
+  return true
+}
 export default router

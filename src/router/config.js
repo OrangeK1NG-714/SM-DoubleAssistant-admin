@@ -16,19 +16,21 @@ const routes = [
     {
         path: "/user-manage/addUser",
         component: UserAdd,
+        requireAdmin: true
     },
     {
         path: "/user-manage/userList",
         component: UserList,
+        requireAdmin: true
     },
     {
-        path:"/",
-        redirect:'/index'
+        path: "/",
+        redirect: '/index'
     },
     {
-        path:"/:pathMatch(.*)*",
-        name:"Notfound",
-        component:NotFound
+        path: "/:pathMatch(.*)*",
+        name: "Notfound",
+        component: NotFound
     }
 ]
 

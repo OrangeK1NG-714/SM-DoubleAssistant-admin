@@ -80,6 +80,7 @@ const submitForm = () => {
         console.log(res.data);
         if (res.data.ActionType === "OK") {
           store.commit("changeUserInfo", res.data.data);
+          store.commit("changeGetterRouter", false);
           router.push("/index");
         } else {
           ElMessage.error("用户名和密码不匹配");
