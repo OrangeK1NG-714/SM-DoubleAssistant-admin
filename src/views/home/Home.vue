@@ -5,13 +5,12 @@
     <el-card class="box-card">
       <el-row>
         <el-col :span="4">
-          <el-avatar
-          :size="80"
-            :src="avatarUrl"
-          />
+          <el-avatar :size="80" :src="avatarUrl" />
         </el-col>
         <el-col :span="20">
-          <h3 style="line-height: 100px;">欢迎{{store.state.userInfo.username}}回来,{{ welcomeText }}</h3>
+          <h3 style="line-height: 100px">
+            欢迎{{ store.state.userInfo.username }}回来,{{ welcomeText }}
+          </h3>
         </el-col>
       </el-row>
     </el-card>
@@ -24,25 +23,46 @@
       </template>
     </el-card>
 
-    <el-carousel :interval="4000" type="card" height="200px">
-      <el-carousel-item v-for="item in 6" :key="item">
-        <h3 text="2xl" justify="center">{{ item }}</h3>
+    <el-carousel :interval="4000" type="card" height="200px" v-if="loopList.length">
+      <el-carousel-item v-for="item in loopList" :key="item._id">
+        <div
+          :style="{
+            backgroundImage: `url(http://localhost:3000${item.cover})`,
+            backgroundSize:'cover'
+          }"
+        >
+          <h3 text="2xl" justify="center">{{ item.title }}</h3>
+        </div>
       </el-carousel-item>
     </el-carousel>
   </div>
 </template>
 <script setup>
 import { useStore } from "vuex";
-import {computed  } from "vue";
+import { computed, onMounted, ref } from "vue";
+import axios from "axios";
+
 const store = useStore();
 console.log(store.state);
-
+const loopList = ref([]);
 const avatarUrl = computed(() =>
   store.state.userInfo.avatar
     ? "http://localhost:3000" + store.state.userInfo.avatar
     : `https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png`
-);const welcomeText = computed(()=>new Date().getHours()<12?'开心每一天.':'喝杯coffee~')
-// import axios from 'axios';
+);
+const welcomeText = computed(() =>
+  new Date().getHours() < 12 ? "开心每一天." : "喝杯coffee~"
+);
+
+onMounted(() => {
+  getData();
+});
+const getData = async () => {
+  const res = await axios.get(`/adminapi/product/list`);
+  console.log(res.data.data);
+  loopList.value = res.data.data;
+  console.log(loopList.value);
+};
 
 // axios.get("/adminapi/user/home").then((res) => {
 //   console.log(res.data);
@@ -54,7 +74,7 @@ const avatarUrl = computed(() =>
 }
 
 .el-carousel__item h3 {
-  color: #475669;
+  color: white;
   opacity: 0.75;
   line-height: 200px;
   margin: 0;

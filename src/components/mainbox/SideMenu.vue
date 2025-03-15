@@ -27,6 +27,26 @@
         <el-menu-item index="/user-manage/addUser">添加用户</el-menu-item>
         <el-menu-item index="/user-manage/userList">用户列表</el-menu-item>
       </el-sub-menu>
+      <el-sub-menu index="/news-manage" >
+        <template #title>
+          <el-icon>
+            <Menu />
+          </el-icon>
+          <span>新闻管理</span>
+        </template>
+        <el-menu-item index="/news-manage/NewsAdd">创建新闻</el-menu-item>
+        <el-menu-item index="/news-manage/NewsList">新闻列表</el-menu-item>
+      </el-sub-menu>
+      <el-sub-menu index="/product-manage" >
+        <template #title>
+          <el-icon>
+            <Menu />
+          </el-icon>
+          <span>产品管理</span>
+        </template>
+        <el-menu-item index="/product-manage/ProductAdd">添加产品</el-menu-item>
+        <el-menu-item index="/product-manage/ProductList">产品列表</el-menu-item>
+      </el-sub-menu>
     </el-menu>
   </el-aside>
 </template>
