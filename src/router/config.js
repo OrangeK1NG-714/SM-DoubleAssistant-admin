@@ -9,6 +9,10 @@ import NewsEdit from '@/views/news-manage/NewsEdit.vue'
 import ProductAdd from '@/views/product-manage/ProductAdd.vue'
 import ProductList from '@/views/product-manage/ProductList.vue'
 import ProductEdit from '@/views/product-manage/ProductEdit.vue'
+import DailyNecessitiesAdd from '@/views/show-dailyNecessities/DailyNecessitiesAdd.vue'
+import DailyNecessitiesList from '@/views/show-dailyNecessities/DailyNecessitiesList.vue'
+import DailyNecessitiesEdit from '@/views/show-dailyNecessities/DailyNecessitiesEdit.vue'
+
 
 const routes = [
     {
@@ -57,6 +61,21 @@ const routes = [
     {
         path: "/product-manage/EditProduct/:id",
         component: ProductEdit,
+        requireAdmin: true
+    },
+    {
+        path: "/show-dailyNecessities/DailyNecessitiesAdd",
+        component: DailyNecessitiesAdd,
+        requireAdmin: true
+    },
+    {
+        path: "/show-dailyNecessities/DailyNecessitiesList",
+        component: DailyNecessitiesList,
+        requireAdmin: true
+    },
+    {
+        path: "/show-dailyNecessities/EditDailyNecessities/:id",
+        component: DailyNecessitiesEdit,
         requireAdmin: true
     },
     {
