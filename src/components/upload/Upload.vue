@@ -14,10 +14,15 @@
 import { defineEmits, defineProps, computed } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 
+// 定义 props
 const props = defineProps({
   avatar: String,
 });
+
+// 定义 emit 事件
 const emit = defineEmits(["kerwinchange"]);
+
+// 处理图片路径
 const uploadAvatar = computed(() =>
   props.avatar.includes("blob")
     ? props.avatar
@@ -26,6 +31,8 @@ const uploadAvatar = computed(() =>
 //每次选择完图片后的回调
 const handleChange = (file) => {
   emit("kerwinchange", file.raw);
+  console.log(file.raw);
+  
 };
 </script>
 
