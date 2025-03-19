@@ -21,28 +21,7 @@
         <Upload :avatar="dailyProductForm.cover" @kerwinchange="handleChange" />
       </el-form-item>
       <el-form-item label="生活用品模型文件" prop="modelFile">
-        <el-upload
-          class="upload-demo"
-          drag
-         
-          action=""
-          :limit="1"
-          accept=".fbx"
-          :on-remove="handleRemove"
-          :before-upload="beforeUpload"
-          :on-change="handleFileChange"
-          :file-list="fileList"  
-        >
-          <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-          <div class="el-upload__text">
-            拖动.fbx文件到此处 <em>点击上传</em>
-          </div>
-          <template #tip>
-            <div class="el-upload__tip">
-              只支持fbx文件格式，文件大小不能超过50M。
-            </div>
-          </template>
-        </el-upload>
+        <UploadModel @qlcmodelchange="handleModelChange"/>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm()">添加产品</el-button>
@@ -53,7 +32,9 @@
 <script setup>
 import { ref, reactive } from "vue";
 import Upload from "@/components/upload/Upload.vue";
+import UploadModel from "@/components/upload/UploadModel.vue";
 import upload from "@/util/upload";
+import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
 import { UploadFilled } from "@element-plus/icons-vue";
 const dailyProductFormRef = ref();
@@ -71,12 +52,21 @@ const dailyProductFormRules = reactive({
     { required: true, message: "请输入简要描述", trigger: "blur" },
   ],
   cover: [{ required: true, message: "请上传生活用品图片", trigger: "blur" }],
+  modelFile: [{ required: true, message: "请上传生活用品FBX模型", trigger: "blur" }],
 });
 
 //每次选择完图片后的回调
 const handleChange = (file) => {
   dailyProductForm.cover = URL.createObjectURL(file);
   dailyProductForm.file = file;
+  console.log("file", file);
+  console.log("cover", dailyProductForm.cover);
+
+};
+//选择模型文件
+const handleModelChange = (modelFile) => {
+  dailyProductForm.modelFile = modelFile;
+  console.log("选择的模型文件：", dailyProductForm.modelFile)
 };
 const router = useRouter();
 //更新提交
@@ -84,41 +74,12 @@ const submitForm = () => {
   dailyProductFormRef.value.validate(async (valid) => {
     if (valid) {
         console.log("dailyProductForm", dailyProductForm);
-    //   await upload("/adminapi/product/add", dailyProductForm);
-    //   router.push("/product-manage/ProductList");
+      await upload("/adminapi/dailyNecessities/add", dailyProductForm);
+      router.push("/show-dailyNecessities/DailyNecessitiesList");
     }
   });
 };
 
-const fileList = ref([]); // 定义 fileList
-
-// 文件上传前的校验
-const beforeUpload = (file) => {
-  const isFBX = file.type === "application/octet-stream" && file.name.endsWith(".fbx");
-  const isLt50MB = file.size / 1024 / 1024 < 50;
-
-  if (!isFBX) {
-    ElMessage.error("只能上传 .fbx 文件！");
-    return false;
-  }
-  if (!isLt50MB) {
-    ElMessage.error("文件大小不能超过 50MB！");
-    return false;
-  }
-  return true;
-};
-
-// 文件移除的回调
-const handleRemove = (file, fileList) => {
-  console.log("文件移除：", file, fileList);
-  dailyProductForm.modelFile = null; // 清空文件数据
-};
-// 文件选择后的回调
-const handleFileChange = (file) => {
-  console.log("已选择文件：", file);
-  fileList.value = [file]; // 更新 fileList
-  dailyProductForm.modelFile = file.raw; // 将文件存储到表单数据中
-};
 </script>
 <style lang="scss" scoped>
 .demo-ruleForm {

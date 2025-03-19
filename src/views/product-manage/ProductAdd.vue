@@ -52,6 +52,9 @@ const productFormRules = reactive({
 //每次选择完图片后的回调
 const handleChange = (file) => {
   productForm.cover = URL.createObjectURL(file);
+  console.log("file", file);
+  console.log("cover", productForm.cover);
+  
   productForm.file = file;
 };
 const router = useRouter();
