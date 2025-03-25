@@ -14,8 +14,8 @@
       <el-form-item label="生活用品名称" prop="title">
         <el-input v-model="dailyProductForm.title" />
       </el-form-item>
-      <el-form-item label="生活用品简要描述" prop="introduction">
-        <el-input v-model="dailyProductForm.introduction" type="textarea" />
+      <el-form-item label="生活用品英文名称" prop="enName">
+        <el-input v-model="dailyProductForm.enName" type="textarea" />
       </el-form-item>
       <el-form-item label="生活用品图片" prop="cover">
         <Upload :avatar="dailyProductForm.cover" @kerwinchange="handleChange" />
@@ -40,7 +40,7 @@ import { UploadFilled } from "@element-plus/icons-vue";
 const dailyProductFormRef = ref();
 const dailyProductForm = reactive({
   title: "",
-  introduction: "",
+  enName: "",
   detail: "",
   cover: "",
   file: null,
@@ -48,8 +48,8 @@ const dailyProductForm = reactive({
 });
 const dailyProductFormRules = reactive({
   title: [{ required: true, message: "请输入生活用品名称", trigger: "blur" }],
-  introduction: [
-    { required: true, message: "请输入简要描述", trigger: "blur" },
+  enName: [
+    { required: true, message: "请输入英文名称", trigger: "blur" },
   ],
   cover: [{ required: true, message: "请上传生活用品图片", trigger: "blur" }],
   modelFile: [{ required: true, message: "请上传生活用品FBX模型", trigger: "blur" }],

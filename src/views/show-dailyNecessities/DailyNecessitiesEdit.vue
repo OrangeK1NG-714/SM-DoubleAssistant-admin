@@ -14,8 +14,8 @@
         <el-form-item label="产品名称" prop="title">
           <el-input v-model="dailyProductForm.title" />
         </el-form-item>
-        <el-form-item label="产品简要描述" prop="introduction">
-          <el-input v-model="dailyProductForm.introduction" type="textarea" />
+        <el-form-item label="产品简要描述" prop="enName">
+          <el-input v-model="dailyProductForm.enName" type="textarea" />
         </el-form-item>
         <el-form-item label="产品图片" prop="cover">
           <Upload :avatar="dailyProductForm.cover" @kerwinchange="handleChange" />
@@ -36,7 +36,7 @@
   const dailyProductFormRef = ref();
   const dailyProductForm = reactive({
   title: "",
-  introduction: "",
+  enName: "",
   detail: "",
   cover: "",
   file: null,
@@ -44,8 +44,8 @@
 });
 const dailyProductFormRules = reactive({
   title: [{ required: true, message: "请输入生活用品名称", trigger: "blur" }],
-  introduction: [
-    { required: true, message: "请输入简要描述", trigger: "blur" },
+  enName: [
+    { required: true, message: "请输入英文名称", trigger: "blur" },
   ],
   cover: [{ required: true, message: "请上传生活用品图片", trigger: "blur" }],
   modelFile: [{ required: true, message: "请上传生活用品FBX模型", trigger: "blur" }],
@@ -66,7 +66,7 @@ const handleChange = (file) => {
     dailyProductFormRef.value.validate(async (valid) => {
       if (valid) {
         await upload("/adminapi/dailyNecessities/list", dailyProductForm);
-        router.push("/product-manage/ProductList");
+        router.push("/show-dailyNecessities/DailyNecessitiesList");
       }
     });
   };
@@ -81,7 +81,7 @@ const handleChange = (file) => {
     const res = await axios.get(`/adminapi/dailyNecessities/list/${route.params.id}`);
     console.log(res.data.data[0]);
   
-    Object.assign(productForm, res.data.data[0]);
+    Object.assign(dailyProductForm, res.data.data[0]);
   };
   </script>
   <style lang="scss" scoped>
