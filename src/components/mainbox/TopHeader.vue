@@ -4,7 +4,7 @@
       <el-icon>
         <Menu />
       </el-icon>
-      <span>3D扫描数字化后台管理系统</span>
+      <span>ZUST数媒导师双选助手后台管理系统</span>
     </div>
     <div class="right">
       <span>欢迎 {{ $store.state.userInfo.username }} 回来</span>

@@ -3,6 +3,7 @@ import Login from '../views/Login.vue'
 import MainBox from '../views/MainBox.vue'
 import Home from '../views/home/Home.vue'
 import Center from '../views/center/Center.vue'
+
 import RoutesConfig from './config'
 import store from '@/store/index'
 const routes = [

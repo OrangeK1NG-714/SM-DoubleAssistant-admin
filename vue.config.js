@@ -5,10 +5,21 @@ module.exports = defineConfig({
   //反向代理解决跨域问题
   devServer:{
     proxy:{
-      "/adminapi":{
-        target:"http://localhost:3000",
+      "/api":{
+        target:"http://localhost:7001",
         changeOrigin:true
       }
-    }
+    },
+     client: {
+        overlay: {
+          runtimeErrors: (error) => {
+            const ignoreErrors = [
+              'ResizeObserver',
+              'hydration'
+            ]
+            return !ignoreErrors.some(pattern => error.message.includes(pattern))
+          }
+        }
+      }
   }
 })

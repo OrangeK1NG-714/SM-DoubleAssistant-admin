@@ -74,11 +74,11 @@ const submitForm = () => {
   //1.  校验表单
   loginFormRef.value.validate((valid) => {
     if (valid) {
-      // console.log(loginForm);
-      // localStorage.setItem("token", "kerwin");
-      axios.post("/adminapi/user/login", loginForm).then((res) => {
+      axios.post("/api/user/login", loginForm).then((res) => {
         console.log(res.data);
-        if (res.data.ActionType === "OK") {
+        if (res.data.code === 200) {
+          console.log(123);
+          
           store.commit("changeUserInfo", res.data.data);
           store.commit("changeGetterRouter", false);
           router.push("/index");

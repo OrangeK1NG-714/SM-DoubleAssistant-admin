@@ -13,6 +13,8 @@ import DailyNecessitiesAdd from '@/views/show-dailyNecessities/DailyNecessitiesA
 import DailyNecessitiesList from '@/views/show-dailyNecessities/DailyNecessitiesList.vue'
 import DailyNecessitiesEdit from '@/views/show-dailyNecessities/DailyNecessitiesEdit.vue'
 
+import ActivityList from '@/views/activity/activityList.vue'
+
 
 const routes = [
     {
@@ -26,47 +28,38 @@ const routes = [
     {
         path: "/user-manage/addUser",
         component: UserAdd,
-        requireAdmin: true
     },
     {
         path: "/user-manage/userList",
         component: UserList,
-        requireAdmin: true
     },
     {
         path: "/news-manage/NewsAdd",
         component: NewsAdd,
-        requireAdmin: true
     },
     {
         path: "/news-manage/NewsList",
         component: NewsList,
-        requireAdmin: true
     },
     {
         path: "/news-manage/EditNews/:id",
         component: NewsEdit,
-        requireAdmin: true
     },
     {
         path: "/product-manage/ProductAdd",
         component: ProductAdd,
-        requireAdmin: true
     },
     {
         path: "/product-manage/ProductList",
         component: ProductList,
-        requireAdmin: true
     },
     {
         path: "/product-manage/EditProduct/:id",
         component: ProductEdit,
-        requireAdmin: true
     },
     {
         path: "/show-dailyNecessities/DailyNecessitiesAdd",
         component: DailyNecessitiesAdd,
-        requireAdmin: true
     },
     {
         path: "/show-dailyNecessities/DailyNecessitiesList",
@@ -77,6 +70,10 @@ const routes = [
         path: "/show-dailyNecessities/EditDailyNecessities/:id",
         component: DailyNecessitiesEdit,
         requireAdmin: true
+    },
+    {
+        path:"/activityList",
+        component:ActivityList
     },
     {
         path: "/",

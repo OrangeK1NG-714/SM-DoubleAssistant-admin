@@ -15,26 +15,6 @@
       </el-row>
     </el-card>
 
-    <el-card class="box-card">
-      <template #header>
-        <div class="card-header">
-          <span>公司产品</span>
-        </div>
-      </template>
-    </el-card>
-
-    <el-carousel :interval="4000" type="card" height="200px" v-if="loopList.length">
-      <el-carousel-item v-for="item in loopList" :key="item._id">
-        <div
-          :style="{
-            backgroundImage: `url(http://localhost:3000${item.cover})`,
-            backgroundSize:'cover'
-          }"
-        >
-          <h3 text="2xl" justify="center">{{ item.title }}</h3>
-        </div>
-      </el-carousel-item>
-    </el-carousel>
   </div>
 </template>
 <script setup>
@@ -54,15 +34,15 @@ const welcomeText = computed(() =>
   new Date().getHours() < 12 ? "开心每一天." : "喝杯coffee~"
 );
 
-onMounted(() => {
-  getData();
-});
-const getData = async () => {
-  const res = await axios.get(`/adminapi/product/list`);
-  console.log(res.data.data);
-  loopList.value = res.data.data;
-  console.log(loopList.value);
-};
+// onMounted(() => {
+//   getData();
+// });
+// const getData = async () => {
+//   const res = await axios.get(`/adminapi/product/list`);
+//   console.log(res.data.data);
+//   loopList.value = res.data.data;
+//   console.log(loopList.value);
+// };
 
 // axios.get("/adminapi/user/home").then((res) => {
 //   console.log(res.data);
