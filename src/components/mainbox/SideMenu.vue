@@ -24,45 +24,17 @@
         <el-menu-item index="/user-manage/userList">用户列表</el-menu-item>
       </el-sub-menu>
 
-      <el-menu-item index="/activityList">
-        <el-icon>
-          <Avatar />
-        </el-icon>
-        <span>活动列表</span>
-      </el-menu-item>
-
-
-      <el-sub-menu index="/show-dailyNecessities">
+      <el-sub-menu index="/activity">
         <template #title>
           <el-icon>
             <Menu />
           </el-icon>
-          <span>生活用品展示管理</span>
+          <span>活动管理</span>
         </template>
-        <el-menu-item index="/show-dailyNecessities/DailyNecessitiesAdd">添加生活用品</el-menu-item>
-        <el-menu-item index="/show-dailyNecessities/DailyNecessitiesList">生活用品展示</el-menu-item>
+        <el-menu-item index="/activity/addActivity">添加活动</el-menu-item>
+        <el-menu-item index="/activity/activityList">活动列表</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu index="/news-manage">
-        <template #title>
-          <el-icon>
-            <Menu />
-          </el-icon>
-          <span>新闻管理</span>
-        </template>
-        <el-menu-item index="/news-manage/NewsAdd">创建新闻</el-menu-item>
-        <el-menu-item index="/news-manage/NewsList">新闻列表</el-menu-item>
-      </el-sub-menu>
-      <el-sub-menu index="/product-manage">
-        <template #title>
-          <el-icon>
-            <Menu />
-          </el-icon>
-          <span>产品管理</span>
-        </template>
-        <el-menu-item index="/product-manage/ProductAdd">添加产品</el-menu-item>
-        <el-menu-item index="/product-manage/ProductList">产品列表</el-menu-item>
-      </el-sub-menu>
     </el-menu>
   </el-aside>
 </template>

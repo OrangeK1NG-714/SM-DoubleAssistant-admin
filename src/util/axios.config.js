@@ -7,7 +7,7 @@ axios.interceptors.request.use(
         const token = localStorage.getItem("token");
         //添加token令牌
         config.headers.Authorization = `${token}`
-        console.log(config);
+        // console.log(config);
         
         return config;
     },
@@ -23,7 +23,7 @@ axios.interceptors.response.use(
         // 对响应数据做些什么
         // console.log('响应拦截器 - 响应到达前', response);
         // console.log(response.headers);
-        console.log(123);
+        // console.log(123);
         
         console.log(response.headers);
         
