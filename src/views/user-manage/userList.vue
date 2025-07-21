@@ -22,14 +22,9 @@
         </div>
       </div>
 
-      <el-table 
-        :data="paginatedData" 
-        style="width: 100%" 
-        @select="handleSelect"
-        @select-all="handleSelectAll" 
-        :row-key="row => row._id"
-        ref="tableRef"
-      >
+
+
+      <el-table :data="paginatedData" style="width: 100%" @select-all="handleSelectAll" :row-key="row => row._id">
         <el-table-column type="selection" width="55" />
 
         <el-table-column prop="username" label="用户名" width="180" />
@@ -93,7 +88,6 @@
     </el-dialog>
   </div>
 </template>
-
 <script setup>
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -101,8 +95,6 @@ import axios from "axios";
 
 const currentPage = ref(1);
 const pageSize = ref(10);
-const tableRef = ref(); // 添加表格引用
-
 // 分页相关函数
 const handlePageChange = (val) => {
   currentPage.value = val;
@@ -120,9 +112,9 @@ const paginatedData = computed(() => {
   return tableData.value.slice(start, end);
 });
 
+
 const searchForm = reactive({
   username: "",
-  role: ""
 });
 
 const dialogVisible = ref(false);
@@ -151,7 +143,6 @@ const options = [
 ];
 
 const tableData = ref([]);
-const selectedUsers = ref([]);
 
 onMounted(async () => {
   await getTableData();
@@ -164,64 +155,28 @@ const getTableData = async () => {
   return res.data;
 };
 
-// 处理单个选择
-const handleSelect = (selection, row) => {
-  if (selection.includes(row)) {
-    // 添加选中
-    if (!selectedUsers.value.some(user => user._id === row._id)) {
-      selectedUsers.value.push(row);
-    }
-  } else {
-    // 取消选中
-    selectedUsers.value = selectedUsers.value.filter(user => user._id !== row._id);
-  }
-};
+// 新增选中数据响应式变量
+const selectedUsers = ref([]);
 
-// 处理全选
-const handleSelectAll = (selection) => {
-  if (selection.length > 0) {
-    // 全选当前页
-    const currentPageIds = paginatedData.value.map(item => item._id);
-    
-    // 添加当前页选中项到selectedUsers（去重）
-    paginatedData.value.forEach(row => {
-      if (!selectedUsers.value.some(user => user._id === row._id)) {
-        selectedUsers.value.push(row);
-      }
-    });
-    
-    // 确保所有数据都被选中（全选所有页）
-    selectedUsers.value = [...new Set([...selectedUsers.value, ...tableData.value])];
-  } else {
-    // 取消全选 - 只取消当前页的选中
-    const currentPageIds = paginatedData.value.map(item => item._id);
-    selectedUsers.value = selectedUsers.value.filter(user => !currentPageIds.includes(user._id));
-  }
-  
+// 新增全选处理函数
+const handleSelectAll = async () => {
+  selectedUsers.value = tableData.value;
   console.log('当前选中用户:', selectedUsers.value.length);
+
 };
 
-// 确保每次分页变化时更新表格的选中状态
-watch([currentPage, pageSize], () => {
-  nextTick(() => {
-    paginatedData.value.forEach(row => {
-      if (selectedUsers.value.some(user => user._id === row._id)) {
-        tableRef.value.toggleRowSelection(row, true);
-      } else {
-        tableRef.value.toggleRowSelection(row, false);
-      }
-    });
-  });
-});
+
 
 //编辑回调
 const handleEdit = async (data) => {
+  // console.log(data);
   const res = await axios.get(`/adminapi/user/list/${data._id}`);
+  //防止直接复制破坏响应性//但现在直接赋值好像可以？！
   Object.assign(userForm, res.data.data[0]);
   console.log(userForm);
+
   dialogVisible.value = true;
 };
-
 //编辑确认回调
 const handleEditConfirm = () => {
   userFormRef.value.validate(async (valid) => {
@@ -235,13 +190,12 @@ const handleEditConfirm = () => {
     }
   });
 };
-
 const handleDelete = async (data) => {
   console.log(data);
   await axios.delete(`/adminapi/user/list/${data._id}`);
+
   getTableData();
 };
-
 //重置密码
 const handleResetPassword = async (data) => {
   ElMessageBox.confirm('确认重置密码吗？', '提示', {
@@ -272,31 +226,24 @@ const handleSearch = async () => {
   });
   console.log(res.data);
   tableData.value = res.data;
-  selectedUsers.value = []; // 搜索时清空已选
 };
-
 //重置事件
 const handleReset = () => {
   searchForm.username = "";
   searchForm.role = "";
-  selectedUsers.value = []; // 重置时清空已选
   getTableData();
 };
 
 //一键重置所有用户密码
 const handleResetAllPassword = async () => {
-  if (selectedUsers.value.length === 0) {
-    ElMessage.warning('请先选择要重置密码的用户');
-    return;
-  }
-  
-  ElMessageBox.confirm(`确认重置${selectedUsers.value.length}个用户的密码吗？`, '提示', {
+  ElMessageBox.confirm('确认重置所有选择的用户密码吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
     const selectedUserName = selectedUsers.value.map(user => user.username);
     console.log(selectedUserName);
+
 
     const res = await axios.post(`/api/admin/resetSelectedPassword`, {
       selectedUsers: selectedUserName,
