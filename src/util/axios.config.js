@@ -25,10 +25,10 @@ axios.interceptors.response.use(
         // console.log(response.headers);
         // console.log(123);
         
-        console.log(response.headers);
+        // console.log(response.headers);
         
         const { authorization } = response.headers;
-        console.log(authorization);
+        // console.log(authorization);
         
         authorization && localStorage.setItem("token", authorization)
         // 例如：只返回响应数据

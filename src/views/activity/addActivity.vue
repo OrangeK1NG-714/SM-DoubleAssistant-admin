@@ -48,6 +48,7 @@ import { useRouter } from "vue-router";
 import { ElMessage } from 'element-plus';
 import axios from "axios";
 
+const router = useRouter()
 
 // 新增临时日期范围变量
 const tempDateRange1 = ref([]);
@@ -131,27 +132,6 @@ const activityFormRules = reactive({
     name: [{ required: true, message: "请输入活动名称", trigger: "blur" }],
     description: [{ required: true, message: "请输入活动描述", trigger: "blur" }], 
 });
-
-// const options = [
-//   {
-//     label: "管理员",
-//     value: 'admin',
-//   },
-//   {
-//     label: "老师",
-//     value: 'teacher',
-//   },
-//   {
-//     label: "学生",
-//     value: 'student',
-//   },
-// ];
-// //每次选择完图片后的回调
-// const handleChange = (file) => {
-//   userForm.avatar = URL.createObjectURL(file);
-//   userForm.file = file;
-// };
-const router = useRouter()
 // //更新单一新增
 const submitOneForm = () => {
     console.log(activityForm);
@@ -178,20 +158,6 @@ const submitOneForm = () => {
             }
         }
     })
-    // const res =  await axios.post("/api/admin/addActivity", activityForm)
-    // console.log(res);
-    // if(res.data.code === 200){
-    //  ElMessage.success('添加成功');
-    //  router.push("/activity/activityList");
-    // }else{
-    //  ElMessage.error('添加失败');
-    // }
-    //   userFormRef.value.validate(async (valid) => {
-    //     if (valid) {
-    //       await axios.post("/api/admin/register", userForm);
-    //       router.push("/user-manage/userList");
-    //     }
-    //   });
 };
 
 </script>
