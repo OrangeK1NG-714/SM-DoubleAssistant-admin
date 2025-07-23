@@ -8,7 +8,7 @@
                 <el-table-column prop="startDate" label="活动开始时间" width="auto" />
                 <el-table-column prop="endDate" label="活动结束时间" width="auto" />
 
-                <el-table-column label="操作" width="auto">
+                <el-table-column label="操作" width="600px">
                     <template #default="scope">
                         <el-button size="small" @click="handleEdit(scope.row)">
                             编辑
@@ -23,6 +23,9 @@
                             @click="handleViewActivityUsers(scope.row)">查看活动用户</el-button>
                         <el-button size="small" type="warning" @click="handleAddUserToActivity(scope.row)">
                             添加用户至活动
+                        </el-button>
+                         <el-button size="small" type="success" @click="handleViewActivityDetails(scope.row._id)">
+                            查看活动详情
                         </el-button>
                     </template>
                 </el-table-column>
@@ -179,6 +182,9 @@
 import { ref, reactive, onMounted, computed, watch, nextTick } from "vue";
 import axios from "axios";
 import { ElMessage } from 'element-plus';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const currentPage = ref(1);
 const pageSize = ref(10);
@@ -541,6 +547,18 @@ const handleAddUserToActivity = async (row) => {
 
     }
 };
+//查看活动详情
+const handleViewActivityDetails = (activityId) => {
+  // 跳转到最终志愿列表页面，并携带活动id
+  router.push({
+    path: '/volunteer/finalVolunteerList',
+    query: {
+      activityId: activityId
+    }
+  });
+};
+
+
 //确认添加
 const saveAddUser = async () => {
     // console.log(currentActivityId.value);

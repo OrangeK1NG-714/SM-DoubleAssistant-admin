@@ -35,6 +35,17 @@
         <el-menu-item index="/activity/activityList">活动列表</el-menu-item>
       </el-sub-menu>
 
+        <el-sub-menu index="/volunteer">
+        <template #title>
+          <el-icon>
+            <Menu />
+          </el-icon>
+          <span>志愿管理</span>
+        </template>
+        <el-menu-item index="/volunteer/selectVolunteerList">选择志愿列表</el-menu-item>
+        <el-menu-item index="/volunteer/finalVolunteerList">最终志愿列表</el-menu-item>
+        <el-menu-item index="/volunteer/volunteerAdd">添加志愿</el-menu-item>
+      </el-sub-menu>
     </el-menu>
   </el-aside>
 </template>
