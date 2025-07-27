@@ -161,10 +161,17 @@
                         <el-popconfirm title="你确定要删除吗" confirm-button-text="确定" cancel-button-text="取消"
                             @confirm="handleDeleteViewUser(scope.row)">
                             <template #reference>
-                                <el-button size="small" type="danger"> 删除 </el-button>
+                                <el-button size="small" type="danger"> 删除用户 </el-button>
+                            </template>
+                        </el-popconfirm>
+                          <el-popconfirm title="你确定要重置吗" confirm-button-text="确定" cancel-button-text="取消" 
+                            @confirm="handleResetVolunteer(scope.row)" v-if="scope.row.role !== 'teacher'">
+                            <template #reference>
+                                <el-button size="small" type="danger"> 重置志愿 </el-button>
                             </template>
                         </el-popconfirm>
                     </template>
+                    
                 </el-table-column>
             </el-table>
             <el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="viewUserList.length"
@@ -638,6 +645,23 @@ const handleDeleteViewUser = async (row) => {
     }
     else {
         ElMessage.error('删除失败');
+    }
+}
+//重置志愿
+const handleResetVolunteer = async (row) => {
+    console.log(row);
+    const res = await axios.delete("/api/admin/resetVolunteer", {
+        data: {
+            activityId: row.activityId,
+            studentId: row.studentId,
+        }
+    })
+    if (res.data.code === 200) {
+        ElMessage.success('重置成功');
+        handleSearchInViewDialog();
+    }
+    else {
+        ElMessage.error('重置失败');
     }
 }
 </script>
