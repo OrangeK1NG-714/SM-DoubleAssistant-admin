@@ -24,7 +24,7 @@
                         <el-button size="small" type="warning" @click="handleAddUserToActivity(scope.row)">
                             添加用户至活动
                         </el-button>
-                         <el-button size="small" type="success" @click="handleViewActivityDetails(scope.row._id)">
+                        <el-button size="small" type="success" @click="handleViewActivityDetails(scope.row._id)">
                             查看活动详情
                         </el-button>
                     </template>
@@ -156,7 +156,8 @@
                         <el-tag v-else type="success">学生</el-tag>
                     </template>
                 </el-table-column>
-                 <el-table-column label="操作" width="auto">
+                <el-table-column prop="maxSelectNum" label="最大选择人数" />
+                <el-table-column label="操作" width="auto">
                     <template #default="scope">
                         <el-popconfirm title="你确定要删除吗" confirm-button-text="确定" cancel-button-text="取消"
                             @confirm="handleDeleteViewUser(scope.row)">
@@ -164,14 +165,16 @@
                                 <el-button size="small" type="danger"> 删除用户 </el-button>
                             </template>
                         </el-popconfirm>
-                          <el-popconfirm title="你确定要重置吗" confirm-button-text="确定" cancel-button-text="取消" 
+                        <el-popconfirm title="你确定要重置吗" confirm-button-text="确定" cancel-button-text="取消"
                             @confirm="handleResetVolunteer(scope.row)" v-if="scope.row.role !== 'teacher'">
                             <template #reference>
                                 <el-button size="small" type="danger"> 重置志愿 </el-button>
                             </template>
                         </el-popconfirm>
+                        <!-- 增加一个form，需要输入老师的最大选择人数 -->
+                        <el-button type="primary" @click="handleSetMaxSelect(scope.row)" v-if="scope.row.role === 'teacher'">设置最大选择人数</el-button>
                     </template>
-                    
+
                 </el-table-column>
             </el-table>
             <el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="viewUserList.length"
@@ -182,6 +185,22 @@
                     <el-button @click="dialogVisible3 = false">关闭</el-button>
                 </div>
             </template>
+        </el-dialog>
+
+        <el-dialog title="设置最大选择人数" v-model="dialogVisible4" width="30vw">
+            <el-form :model="currentEditingRow" :inline="true" :label-width="100" class="demo-form-inline">
+            <el-form-item label="最大选择人数">
+                <el-input v-model="currentEditingRow.maxSelectNum" placeholder="请输入最大选择人数" clearable />
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="handleUpdateMaxSelectNum">更新</el-button>
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <div class="dialog-footer">
+                <el-button @click="dialogVisible4 = false">关闭</el-button>
+            </div>
+        </template>
         </el-dialog>
     </div>
 </template>
@@ -372,6 +391,41 @@ watch([currentPage2, pageSize2], async () => {
 });
 
 
+const dialogVisible4 = ref(false);
+const currentEditingRow = ref(null);
+
+// 处理设置最大选择人数
+const handleSetMaxSelect = (row) => {
+    currentEditingRow.value = { ...row }; // 创建副本避免直接修改原数据
+    dialogVisible4.value = true;
+};
+
+// 更新最大选择人数
+const handleUpdateMaxSelectNum = async () => {
+    try {
+        // 调用API更新数据
+        console.log(currentEditingRow.value);
+        
+        const res = await axios.put('/api/admin/configMaxSelectNum', {
+            activityId: currentEditingRow.value.activityId,
+            teacherId: currentEditingRow.value.teacherId,
+            maxSelectNum: currentEditingRow.value.maxSelectNum
+        });
+        
+        // 显示成功消息
+        ElMessage.success('更新成功');
+        
+        // 关闭弹窗
+        dialogVisible4.value = false;
+        
+        // 重新获取数据以更新列表
+        // 这里可以只更新对应的行数据，优化性能
+        // await getActivityUsers(currentActivityId.value);
+    } catch (error) {
+        ElMessage.error('更新失败，请重试');
+        console.error('更新最大选择人数失败:', error);
+    }
+};
 
 
 
@@ -556,20 +610,20 @@ const handleAddUserToActivity = async (row) => {
 };
 //查看活动详情
 const handleViewActivityDetails = (activityId) => {
-  // 跳转到最终志愿列表页面，并携带活动id
-  router.push({
-    path: '/volunteer/finalVolunteerList',
-    query: {
-      activityId: activityId
-    }
-  });
+    // 跳转到最终志愿列表页面，并携带活动id
+    router.push({
+        path: '/volunteer/finalVolunteerList',
+        query: {
+            activityId: activityId
+        }
+    });
 };
 
 
 //确认添加
 const saveAddUser = async () => {
     // console.log(currentActivityId.value);
-    
+
     // console.log(selectedUsers.value);
     Promise.all(selectedUsers.value.map(async item => {
         const res = await axios.post("api/admin/addTeacherToActivity", {

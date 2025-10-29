@@ -210,10 +210,12 @@ watch([currentPage, pageSize], async () => {
 
 //编辑回调
 const handleEdit = async (data) => {
-  const res = await axios.get(`/adminapi/user/list/${data._id}`);
-  Object.assign(userForm, res.data.data[0]);
-  console.log(userForm);
-  dialogVisible.value = true;
+  console.log(data);
+  
+  // const res = await axios.get(`/adminapi/user/list/${data._id}`);
+  // Object.assign(userForm, res.data.data[0]);
+  // console.log(userForm);
+  // dialogVisible.value = true;
 };
 
 //编辑确认回调

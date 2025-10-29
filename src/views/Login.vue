@@ -8,7 +8,7 @@
     />
     <!-- 登录表单 -->
     <div class="formContainer">
-      <h3>3D扫描数字化后台管理系统</h3>
+      <h3>数媒双选助手后台管理系统</h3>
       <el-form
         :model="loginForm"
         status-icon

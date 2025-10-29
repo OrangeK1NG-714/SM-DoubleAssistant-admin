@@ -28,6 +28,11 @@
           <el-form-item label="教师名字" prop="name">
             <el-input v-model="userForm.name" />
           </el-form-item>
+           <el-form-item label="教师类型" prop="teacherType">
+          <el-select v-model="userForm.teacherType" placeholder="Select" style="width: 100%">
+            <el-option v-for="item in teacherTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
         </template>
 
 
@@ -166,6 +171,20 @@ const options = [
     value: 'student',
   },
 ];
+const teacherTypeOptions =[
+  {
+    label: "专业导师",
+    value: '0',
+  },
+  {
+    label: "公共导师",
+    value: '1',
+  },
+  {
+    label: "校友导师",
+    value: '2',
+  },
+]
 //每次选择完图片后的回调
 const handleChange = (file) => {
   userForm.avatar = URL.createObjectURL(file);
