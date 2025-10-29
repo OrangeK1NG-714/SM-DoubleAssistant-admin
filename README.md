@@ -1,19 +1,11 @@
 # admin
+这是浙江科技大学计算机学院数字媒体技术专业的双选小程序管理端！
+线上地址：https://www.richardq.tech
 
-## Project setup
-```
-yarn install
-```
+目前挂载个人服务器上，后续会移交给学院！
+测试账号：后续给出
+测试密码：后续给出
 
-### Compiles and hot-reloads for development
-```
-npm run dev
-```
-
-### Compiles and minifies for production
-```
-yarn build
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+## 项目介绍
+这是一个由Vue3 + ElementPlus 简单实现的管理端。
+由Richard_Q编写作为小毕设，仅用于学习和交流，不用于任何商业用途。
