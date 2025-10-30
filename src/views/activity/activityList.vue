@@ -425,6 +425,29 @@ const handleUpdateMaxSelectNum = async () => {
         ElMessage.error('更新失败，请重试');
         console.error('更新最大选择人数失败:', error);
     }
+
+console.log(currentEditingRow.value.activityId);
+
+     try {
+        const res = await axios.get("api/admin/getUserListInActivity", {
+            params: {
+                activityId: currentEditingRow.value.activityId
+            }
+        });
+        console.log(res.data);
+        res.data.map(item => {
+            item.username = item.teacherId || item.studentId;
+            item.role = item.teacherId ? 'teacher' : item.studentId ? 'student' : 'admin';
+        })
+        console.log(res.data);
+
+        viewUserList.value = res.data;
+
+    }
+    catch (error) {
+        console.error('获取活动用户失败:', error);
+        ElMessage.error('获取活动用户失败');
+    }
 };
 
 
@@ -555,7 +578,7 @@ const handleDelete = async (row) => {
 
 //查看活动用户
 const handleViewActivityUsers = async (row) => {
-    // console.log(row);
+    console.log(row);
     currentActivityId.value = row._id;
     dialogVisible3.value = true;
     try {
