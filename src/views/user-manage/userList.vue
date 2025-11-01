@@ -49,6 +49,12 @@
             <el-button size="small" @click="handleResetPassword(scope.row)">
               重置密码
             </el-button>
+            <el-button v-if="scope.row.role === 'teacher'" size="small" type="primary" @click="handleUpdateIntroduction(scope.row)">
+              修改老师简历
+            </el-button>
+            <el-button v-if="scope.row.role === 'teacher'" size="small" type="primary" @click="handleViewIntroduction(scope.row)">
+              查看老师简历
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -85,12 +91,73 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 老师简历上传对话框 -->
+    <el-dialog v-model="introductionDialogVisible" title="修改老师简历" width="600px">
+      <div class="introduction-container">
+        <el-form ref="introductionFormRef" :model="introductionForm" label-width="auto" class="demo-ruleForm">
+          <el-form-item label="当前简历">
+              <div v-if="introductionForm.resumePath" class="current-resume">
+                <img :src="introductionForm.resumePath" alt="老师简历" style="max-width: 100%; max-height: 300px; object-fit: contain;">
+                <div class="file-name">{{ introductionForm.resumeName }}</div>
+              </div>
+              <div v-else class="no-resume">暂无简历图片</div>
+            </el-form-item>
+          <el-form-item label="上传新简历">
+            <el-upload
+              class="upload-demo"
+              drag
+              :action="''"
+              :auto-upload="false"
+              :on-change="handleFileChange"
+              :before-upload="beforeUpload"
+              accept=".jpg,.jpeg,.png,.gif,.pdf"
+              :show-file-list="true"
+              :file-list="fileList"
+            >
+              <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+              <div class="el-upload__text">点击或拖拽文件到此处上传</div>
+              <template #tip>
+                <div class="el-upload__tip">
+                  请上传JPG、JPEG、PNG、GIF格式的图片文件，大小不超过5MB
+                </div>
+              </template>
+            </el-upload>
+          </el-form-item>
+        </el-form>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="introductionDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleUpdateIntroductionConfirm">确认修改</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+      <!-- 查看老师简历对话框 -->
+  <el-dialog
+    v-model="viewIntroductionDialogVisible"
+    title="查看老师简历"
+    width="80%"
+    @close="handleViewIntroductionDialogClose"
+  >
+    <div class="resume-view-container">
+      <div v-if="viewIntroductionForm.resumePath" class="resume-image">
+        <img :src="viewIntroductionForm.resumePath" alt="老师简历" style="max-width: 100%; max-height: 70vh; object-fit: contain;">
+      </div>
+      <div v-else class="no-resume">
+        暂无简历数据
+      </div>
+    </div>
+  </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, computed, watch, nextTick } from "vue";
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { UploadFilled } from '@element-plus/icons-vue'
 import axios from "axios";
 
 const currentPage = ref(1);
@@ -127,6 +194,17 @@ let userForm = reactive({
   role: 2, //1是管理员，2是编辑
   introduction: "",
 });
+
+// 老师简历相关变量
+const introductionDialogVisible = ref(false);
+const introductionFormRef = ref();
+let introductionForm = reactive({
+  teacherId: "",
+  resumeName: "",
+  resumePath: "",
+  uploadedFile: null
+});
+const fileList = ref([]);
 const userFormRules = reactive({
   username: [{ required: true, message: "请输入名字", trigger: "blur" }],
   password: [{ required: true, message: "请输入密码", trigger: "blur" }],
@@ -311,10 +389,213 @@ const handleResetAllPassword = async () => {
     console.log('取消重置密码');
   });
 };
+
+// 修改老师简历
+const handleUpdateIntroduction = async (data) => {
+  console.log(data);
+  // 打开专门的简历上传弹窗
+  introductionDialogVisible.value = true;
+  
+  // 加载老师简历和用户ID
+  introductionForm.teacherId = data.username;
+  // 重置上传相关字段
+  introductionForm.resumeName = "";
+  introductionForm.resumePath = "";
+  introductionForm.uploadedFile = null;
+  fileList.value = [];
+};
+
+// 文件选择变化处理
+const handleFileChange = (uploadFile, uploadFiles) => {
+  console.log('文件选择变化:', uploadFile);
+  
+  // 清除之前的文件列表，只保留当前文件
+  fileList.value = [];
+  
+  // 创建blob URL用于预览
+  const blobUrl = URL.createObjectURL(uploadFile.raw);
+  fileList.value.push({
+    name: uploadFile.name,
+    url: blobUrl
+  });
+  
+  // 保存上传文件信息
+  introductionForm.uploadedFile = uploadFile;
+  introductionForm.resumeName = uploadFile.name;
+  introductionForm.resumePath = blobUrl; // 使用blob URL进行预览
+  
+  ElMessage.success('文件已选择，可以点击确认修改上传');
+};
+
+// 移除文件处理
+const handleRemoveFile = (uploadFile, uploadFiles) => {
+  // 释放blob URL以避免内存泄漏
+  if (introductionForm.resumePath && introductionForm.resumePath.startsWith('blob:')) {
+    URL.revokeObjectURL(introductionForm.resumePath);
+  }
+  // 清除相关数据
+  introductionForm.uploadedFile = null;
+  introductionForm.resumeName = '';
+  introductionForm.resumePath = '';
+  fileList.value = [];
+};
+
+// 修改简历对话框关闭时的处理函数
+const handleIntroductionDialogClose = () => {
+  // 释放blob URL以避免内存泄漏
+  if (introductionForm.resumePath && introductionForm.resumePath.startsWith('blob:')) {
+    URL.revokeObjectURL(introductionForm.resumePath);
+  }
+  
+  // 清除相关数据
+  introductionForm.teacherId = '';
+  introductionForm.uploadedFile = null;
+  introductionForm.resumeName = '';
+  introductionForm.resumePath = '';
+  fileList.value = [];
+};
+
+// 上传前验证
+const beforeUpload = (file) => {
+  const isImage = /\.(jpg|jpeg|png|gif)$/.test(file.name.toLowerCase());
+  const isLt5M = file.size / 1024 / 1024 < 5;
+  
+  if (!isImage) {
+    ElMessage.error('请上传图片格式的文件');
+    return false;
+  }
+  if (!isLt5M) {
+    ElMessage.error('文件大小不能超过5MB');
+    return false;
+  }
+  
+  return true;
+};
+
+// 确认修改老师简历
+const handleUpdateIntroductionConfirm = async () => {
+  // 检查是否已上传文件
+  if (!introductionForm.uploadedFile) {
+    ElMessage.warning('请先上传简历图片');
+    return;
+  }
+    
+  try {
+    // 创建FormData对象来上传文件
+    const formData = new FormData();
+    // 添加文件内容
+    formData.append('file', introductionForm.uploadedFile.raw);
+    // 添加其他表单字段
+    formData.append('teacherId', introductionForm.teacherId);
+    formData.append('resumeName', introductionForm.resumeName);
+    formData.append('resumePath', introductionForm.resumePath);
+    // 调用后端API上传文件，不需要设置Content-Type，axios会自动设置为multipart/form-data
+    const res = await axios.post(`/api/teacher/uploadTeacherResume`, formData);
+    
+    if (res.data && res.data.code === 200) {
+      // 创建blob URL用于显示
+      const blob = new Blob([introductionForm.uploadedFile.raw], {
+        type: introductionForm.uploadedFile.raw.type
+      });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // 设置resumePath为blob URL，用于前端显示
+      introductionForm.resumePath = blobUrl;
+      
+      ElMessage.success('老师简历上传成功');
+      
+      // 在关闭对话框前记得清理blob URL避免内存泄漏
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+        introductionDialogVisible.value = false;
+      }, 100);
+      
+      getTableData(); // 重新获取表格数据
+    } else {
+      ElMessage.error('上传失败：' + (res.data?.message || '服务器错误'));
+    }
+  } catch (error) {
+    ElMessage.error('上传失败，请重试');
+    console.error('上传错误：', error);
+  }
+};
+
+// 查看老师简历对话框相关
+const viewIntroductionDialogVisible = ref(false);
+const viewIntroductionForm = reactive({
+  resumePath: '',
+  resumeName: ''
+});
+
+const handleViewIntroduction = async (data) => {
+  try {
+    // 获取老师简历信息
+    const res = await axios.get("/api/teacher/getTeacherResume", {
+      params: {
+        teacherId: data.username
+      },
+      responseType: 'blob' // 设置响应类型为blob
+    });
+    
+    console.log('获取简历响应:', res);
+    console.log(res.data);
+    // 检查响应是否为blob数据
+    if (res.data && res.data instanceof Blob) {
+      // 创建blob URL用于显示图片
+      const blobUrl = URL.createObjectURL(res.data);
+      
+      // 设置表单数据
+      viewIntroductionForm.resumePath = blobUrl;
+      viewIntroductionForm.resumeName = data.username + '_resume';
+      
+      // 显示对话框
+      viewIntroductionDialogVisible.value = true;
+    } else {
+      ElMessage.error('获取简历失败：返回数据格式错误');
+    }
+  } catch (error) {
+    ElMessage.error('获取简历失败，请重试');
+    console.error('获取简历错误：', error);
+  }
+};
+
+// 关闭查看简历对话框时释放资源
+const handleViewIntroductionDialogClose = () => {
+  // 释放blob URL以避免内存泄漏
+  if (viewIntroductionForm.resumePath && viewIntroductionForm.resumePath.startsWith('blob:')) {
+    URL.revokeObjectURL(viewIntroductionForm.resumePath);
+    viewIntroductionForm.resumePath = '';
+  }
+};
 </script>
 
 <style lang="scss" scoped>
 .el-table {
   margin-top: 50px;
+}
+
+.introduction-container {
+  padding: 20px 0;
+}
+
+.current-resume {
+  margin: 10px 0 20px 0;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.no-resume {
+  margin: 10px 0 20px 0;
+  padding: 20px;
+  text-align: center;
+  color: #909399;
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
+}
+
+.upload-demo {
+  margin-top: 10px;
 }
 </style>

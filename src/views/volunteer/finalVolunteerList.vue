@@ -326,58 +326,121 @@ const handleExport = async () => {
     })
     console.log(userList.data, 112233);
 
-
-    // 按teacherId分组学生
-    const teacherGroups = {}
-    res.data.forEach(item => {
-        if (!teacherGroups[item.teacherId]) {
-            teacherGroups[item.teacherId] = []
-        }
-    })
-
     // 记录已选中的学生ID
     const selectedStudentIds = new Set(selectedUsers.value.map(item => item.studentId));
 
     // 找出落选的学生
     const unselectedStudents = userList.data.filter(student => !selectedStudentIds.has(student.studentId));
 
-    selectedUsers.value.forEach(item => {
-        teacherGroups[item.teacherId].push(`${item.data?.name || ''} (${item.studentId})`)
-    })
-
-    // 准备导出数据
+    // 准备导出数据 - 按照你提供的Excel格式
     const exportData = []
-    for (const teacherId in teacherGroups) {
-        // 找到对应的教师名称
-        const teacher = res.data.find(t => t.teacherId === teacherId)
-        const teacherName = teacher ? teacher.name : teacherId
-
-        exportData.push({
-            '教师姓名': teacherName,
-            '学生列表': teacherGroups[teacherId].join('; ') || '暂无学生'
-        })
+    
+    // 添加表头
+    exportData.push(['导师', '学生', '学号', '专业']);
+    
+    // 处理每个导师的学生
+    const mergeRanges = []; // 存储合并单元格的范围
+    let currentRow = 1; // 从表头后的第一行开始
+    
+    // 按teacherId分组处理
+    const teachersWithStudents = {};
+    
+    // 首先构建导师-学生的映射关系
+    res.data.forEach(teacher => {
+        const students = selectedUsers.value.filter(item => item.teacherId === teacher.teacherId);
+        if (students.length > 0) {
+            teachersWithStudents[teacher.teacherId] = {
+                teacher,
+                students
+            };
+        } else {
+            // 没有学生的导师也需要显示
+            teachersWithStudents[teacher.teacherId] = {
+                teacher,
+                students: []
+            };
+        }
+    });
+    
+    // 处理每个导师的数据
+    for (const teacherId in teachersWithStudents) {
+        const { teacher, students } = teachersWithStudents[teacherId];
+        const teacherName = teacher.name;
+        const teacherPhone = teacher.phone || '';
+        
+        if (students.length === 0) {
+            // 如果没有学生，添加一行空数据
+            exportData.push([teacherName, '', '', '', teacherPhone]);
+            currentRow++;
+        } else {
+            // 有学生的情况，需要考虑合并单元格
+            exportData.push([teacherName, '', '', '', '']); // 第一行保留导师名称，电话留空
+            
+            // 为每个学生添加一行
+            students.forEach((student, index) => {
+                if (index === 0) {
+                    // 第一个学生的行，复用上面的行
+                    exportData[currentRow][1] = student.data?.name || '';
+                    exportData[currentRow][2] = student.studentId;
+                    exportData[currentRow][3] = student.data?.classNum || '';
+                    exportData[currentRow][4] = teacherPhone; // 第一行显示导师电话
+                } else {
+                    // 后续学生的行，导师名称为空
+                    exportData.push(['', student.data?.name || '', student.studentId, student.data?.classNum || '', '']);
+                }
+            });
+            
+            // 如果有多个学生，需要合并导师名称单元格
+            if (students.length > 1) {
+                mergeRanges.push({
+                    s: { r: currentRow, c: 0 }, // 起始行、列
+                    e: { r: currentRow + students.length - 1, c: 0 } // 结束行、列
+                });
+            }
+            
+            currentRow += students.length;
+        }
     }
 
     // 添加落选的学生
     if (unselectedStudents.length > 0) {
-        const unselectedStudentNames = unselectedStudents.map(student =>
-            `${student.data?.name || ''} (${student.studentId})`
-        ).join('; ');
-
-        exportData.push({
-            '教师姓名': '落选学生',
-            '学生列表': unselectedStudentNames
+        exportData.push(['未分配导师', '', '', '', '']);
+        mergeRanges.push({
+            s: { r: currentRow, c: 0 }, // 起始行、列
+            e: { r: currentRow + unselectedStudents.length, c: 0 } // 结束行、列
+        });
+        
+        unselectedStudents.forEach(student => {
+            exportData.push(['', student.data?.name || '', student.studentId, student.data?.major || '', '']);
         });
     }
+
     // 创建工作簿和工作表
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+    // 设置合并单元格
+    ws['!merges'] = mergeRanges;
+
+    // 设置列宽（可选，根据内容调整）
+    const colWidths = [
+        { wch: 15 }, // 导师列
+        { wch: 15 }, // 学生列
+        { wch: 15 }, // 学号列
+        { wch: 25 }, // 专业列
+        { wch: 15 }  // 导师电话列
+    ];
+    ws['!cols'] = colWidths;
+
+    // 设置单元格样式
+    const wscols = ws['!cols'];
+    if (!wscols) ws['!cols'] = colWidths;
 
     // 将工作表添加到工作簿
-    XLSX.utils.book_append_sheet(wb, ws, '教师学生数据');
+    XLSX.utils.book_append_sheet(wb, ws, '导师制分配表');
 
     // 导出Excel文件
-    XLSX.writeFile(wb, '教师学生数据.xlsx');
+    XLSX.writeFile(wb, '2025级导师制分配表.xlsx');
 
     ElMessage.success('导出成功');
 };
