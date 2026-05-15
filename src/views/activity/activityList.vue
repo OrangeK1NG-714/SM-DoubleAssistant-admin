@@ -3,7 +3,7 @@
     <el-card>
       <el-page-header content="" icon="" title="活动列表" />
 
-      <el-table :data="paginatedData" style="width: 100%">
+      <el-table :data="paginatedData" v-loading="tableLoading" style="width: 100%">
         <el-table-column prop="name" label="活动名称" width="auto" />
         <el-table-column prop="startDate" label="活动开始时间" width="auto" />
         <el-table-column prop="endDate" label="活动结束时间" width="auto" />
@@ -134,7 +134,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveEdit">确认修改</el-button>
+          <el-button type="primary" :loading="saveEditLoading" @click="saveEdit">确认修改</el-button>
         </div>
       </template>
     </el-dialog>
@@ -207,7 +207,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="dialogVisible2 = false">取消</el-button>
-          <el-button type="primary" @click="saveAddUser">确认添加</el-button>
+          <el-button type="primary" :loading="saveAddUserLoading" @click="saveAddUser">确认添加</el-button>
         </div>
       </template>
     </el-dialog>
@@ -330,7 +330,7 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleUpdateMaxSelectNum"
+          <el-button type="primary" :loading="updateMaxSelectLoading" @click="handleUpdateMaxSelectNum"
             >更新</el-button
           >
         </el-form-item>
@@ -351,6 +351,8 @@ import { useRouter } from "vue-router";
 import { usePagination } from "@/composables/usePagination";
 import { useTableSelection } from "@/composables/useTableSelection";
 import { useDateRange } from "@/composables/useDateRange";
+import { useDebounce } from "@/composables/useDebounce";
+import { useLoading } from "@/composables/useLoading";
 
 const router = useRouter();
 
@@ -381,56 +383,29 @@ const handleSetMaxSelect = (row) => {
   dialogVisible4.value = true;
 };
 
-// 更新最大选择人数
-const handleUpdateMaxSelectNum = async () => {
-  try {
-    // 调用API更新数据
-    const res = await axios.put("/api/admin/configMaxSelectNum", {
-      activityId: currentEditingRow.value.activityId,
-      teacherId: currentEditingRow.value.teacherId,
-      maxSelectNum: currentEditingRow.value.maxSelectNum,
-    });
+const { run: handleUpdateMaxSelectNum, loading: updateMaxSelectLoading } = useDebounce(async () => {
+  await axios.put("/api/admin/configMaxSelectNum", {
+    activityId: currentEditingRow.value.activityId,
+    teacherId: currentEditingRow.value.teacherId,
+    maxSelectNum: currentEditingRow.value.maxSelectNum,
+  });
+  ElMessage.success("更新成功");
+  dialogVisible4.value = false;
 
-    // 显示成功消息
-    ElMessage.success("更新成功");
-
-    // 关闭弹窗
-    dialogVisible4.value = false;
-
-    // 重新获取数据以更新列表
-    // 这里可以只更新对应的行数据，优化性能
-    // await getActivityUsers(currentActivityId.value);
-  } catch (error) {
-    ElMessage.error("更新失败，请重试");
-  }
-
-  try {
-    const res = await axios.get("api/admin/getUserListInActivity", {
-      params: {
-        activityId: currentEditingRow.value.activityId,
-      },
-    });
-    res.data.map((item) => {
-      item.username = item.teacherId || item.studentId;
-      item.role = item.teacherId
-        ? "teacher"
-        : item.studentId
-        ? "student"
-        : "admin";
-    });
-
-    viewUserList.value = res.data;
-  } catch (error) {
-    ElMessage.error("获取活动用户失败");
-  }
-};
-
-onMounted(async () => {
-  await getTableData();
+  const res = await axios.get("/api/admin/getUserListInActivity", {
+    params: { activityId: currentEditingRow.value.activityId },
+  });
+  res.data.forEach((item) => {
+    item.username = item.teacherId || item.studentId;
+    item.role = item.teacherId ? "teacher" : item.studentId ? "student" : "admin";
+  });
+  viewUserList.value = res.data;
 });
-const getTableData = async () => {
-  const res = await axios.get("/api/admin/getActivityList");
 
+onMounted(() => loadTableData());
+
+const { run: loadTableData, loading: tableLoading } = useLoading(async () => {
+  const res = await axios.get("/api/admin/getActivityList");
   res.data.forEach((item) => {
     item.startDate = formatISODateToLocal(item.startDate);
     item.endDate = formatISODateToLocal(item.endDate);
@@ -438,15 +413,13 @@ const getTableData = async () => {
     item.secondChooseEndDate = formatISODateToLocal(item.secondChooseEndDate);
     item.thirdChooseEndDate = formatISODateToLocal(item.thirdChooseEndDate);
     item.firstChooseStartDate = formatISODateToLocal(item.firstChooseStartDate);
-    item.secondChooseStartDate = formatISODateToLocal(
-      item.secondChooseStartDate,
-    );
+    item.secondChooseStartDate = formatISODateToLocal(item.secondChooseStartDate);
     item.thirdChooseStartDate = formatISODateToLocal(item.thirdChooseStartDate);
     item.stdChooseEndDate = formatISODateToLocal(item.stdChooseEndDate);
     item.stdChooseStartDate = formatISODateToLocal(item.stdChooseStartDate);
   });
   tableData.value = res.data;
-};
+});
 
 //将ISO日期字符串转换为本地日期字符串
 function formatISODateToLocal(isoString) {
@@ -511,21 +484,17 @@ const handleEdit = (row) => {
   dialogVisible.value = true;
 };
 
-const saveEdit = () => {
-  editFormRef.value.validate(async (valid) => {
-    if (valid) {
-      const res = await axios.put("api/admin/updateActivity", editForm);
-
-      if (res.data.code === 200) {
-        ElMessage.success("修改成功");
-        getTableData();
-        dialogVisible.value = false;
-      } else {
-        ElMessage.error("修改失败");
-      }
-    }
-  });
-};
+const { run: saveEdit, loading: saveEditLoading } = useDebounce(async () => {
+  await editFormRef.value.validate();
+  const res = await axios.put("/api/admin/updateActivity", editForm);
+  if (res.data.code === 200) {
+    ElMessage.success("修改成功");
+    loadTableData();
+    dialogVisible.value = false;
+  } else {
+    ElMessage.error("修改失败");
+  }
+});
 //删除活动
 const handleDelete = async (row) => {
   const res = await axios.delete("/api/admin/deleteActivity", {
@@ -535,7 +504,7 @@ const handleDelete = async (row) => {
   });
   if (res.data.code === 200) {
     ElMessage.success("删除成功");
-    getTableData();
+    loadTableData();
   } else {
     ElMessage.error("删除失败");
   }
@@ -546,12 +515,12 @@ const handleViewActivityUsers = async (row) => {
   currentActivityId.value = row._id;
   dialogVisible3.value = true;
   try {
-    const res = await axios.get("api/admin/getUserListInActivity", {
+    const res = await axios.get("/api/admin/getUserListInActivity", {
       params: {
         activityId: row._id,
       },
     });
-    res.data.map((item) => {
+    res.data.forEach((item) => {
       item.username = item.teacherId || item.studentId;
       item.role = item.teacherId
         ? "teacher"
@@ -600,20 +569,24 @@ const handleViewActivityDetails = (activityId) => {
   });
 };
 
-//确认添加
-const saveAddUser = async () => {
-  Promise.all(
-    selectedUsers.value.map(async (item) => {
-      const res = await axios.post("api/admin/addTeacherToActivity", {
+const { run: saveAddUser, loading: saveAddUserLoading } = useDebounce(async () => {
+  if (selectedUsers.value.length === 0) {
+    ElMessage.warning("请先选择要添加的用户");
+    return;
+  }
+  const count = selectedUsers.value.length;
+  await Promise.all(
+    selectedUsers.value.map((item) =>
+      axios.post("/api/admin/addTeacherToActivity", {
         activityId: currentActivityId.value,
         teacherId: item.role === "teacher" ? item.username : null,
         studentId: item.role === "student" ? item.username : null,
-      });
-    }),
+      })
+    ),
   );
-  ElMessage.success(`添加成功${selectedUsers.value.length}个用户`);
+  ElMessage.success(`添加成功${count}个用户`);
   dialogVisible2.value = false;
-};
+});
 
 //dialog中搜索用户
 const searchFormInDialog = reactive({
@@ -649,7 +622,7 @@ const handleSearchInViewDialog = async () => {
       role: searchFormInViewDialog.role,
     },
   });
-  res.data.map((item) => {
+  res.data.forEach((item) => {
     item.username = item.teacherId || item.studentId;
     item.role = item.teacherId
       ? "teacher"

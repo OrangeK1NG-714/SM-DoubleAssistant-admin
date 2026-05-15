@@ -35,7 +35,7 @@
                     @change="stdChooseDate.handleDateChange" />
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" @click="submitOneForm()">添加活动</el-button>
+                <el-button type="primary" :loading="submitLoading" @click="submitOneForm()">添加活动</el-button>
             </el-form-item>
         </el-form>
 
@@ -47,6 +47,7 @@ import { useRouter } from "vue-router";
 import { ElMessage } from 'element-plus';
 import axios from "axios";
 import { useDateRange } from '@/composables/useDateRange';
+import { useDebounce } from '@/composables/useDebounce';
 
 const router = useRouter()
 const activityFormRef = ref();
@@ -76,23 +77,24 @@ const activityFormRules = reactive({
     description: [{ required: true, message: "请输入活动描述", trigger: "blur" }],
 });
 
-const submitOneForm = () => {
-    if (activityForm.startDate === '') return ElMessage.error('请输入活动开始时间');
-    if (activityForm.firstChooseEndDate === '') return ElMessage.error('请输入第一志愿时间');
-    if (activityForm.secondChooseEndDate === '') return ElMessage.error('请输入第二志愿时间');
-    if (activityForm.thirdChooseEndDate === '') return ElMessage.error('请输入第三志愿时间');
-    if (activityForm.stdChooseEndDate === '') return ElMessage.error('请输入学生填报志愿时间');
+const { run: submitOneForm, loading: submitLoading } = useDebounce(async () => {
+    if (!activityForm.startDate) return ElMessage.error('请输入活动开始时间');
+    if (!activityForm.firstChooseEndDate) return ElMessage.error('请输入第一志愿时间');
+    if (!activityForm.secondChooseEndDate) return ElMessage.error('请输入第二志愿时间');
+    if (!activityForm.thirdChooseEndDate) return ElMessage.error('请输入第三志愿时间');
+    if (!activityForm.stdChooseEndDate) return ElMessage.error('请输入学生填报志愿时间');
 
-    activityFormRef.value.validate(async (valid) => {
-        if (valid) {
-            const res = await axios.post("/api/admin/addActivity", activityForm)
-            if (res.data.code === 200) {
-                ElMessage.success('添加成功');
-                router.push("/activity/activityList");
-            }
-        }
-    })
-};
+    if (new Date(activityForm.endDate) <= new Date(activityForm.startDate)) {
+        return ElMessage.error('活动结束时间必须晚于开始时间');
+    }
+
+    await activityFormRef.value.validate();
+    const res = await axios.post("/api/admin/addActivity", activityForm);
+    if (res.data.code === 200) {
+        ElMessage.success('添加成功');
+        router.push("/activity/activityList");
+    }
+});
 
 </script>
 <style lang="scss" scoped>

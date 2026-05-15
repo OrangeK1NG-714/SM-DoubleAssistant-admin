@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="apple-page">
         <el-card>
             <el-page-header content="已选上学生列表" icon="" title="志愿管理" />
             <div style="display: flex;">
@@ -29,7 +29,7 @@
                 </div>
             </div>
 
-            <el-table :data="paginatedData" style="width: 100%" @select="handleSelect" @select-all="handleSelectAll"
+            <el-table :data="paginatedData" v-loading="tableLoading" style="width: 100%" @select="handleSelect" @select-all="handleSelectAll"
                 :row-key="row => row._id" ref="tableRef">
                 <el-table-column type="selection" width="55" />
 
@@ -40,9 +40,6 @@
                 <el-table-column prop="teacherId" label="教师工号" width="auto" />
                 <el-table-column label="操作" width="auto">
                     <template #default="scope">
-                        <el-button size="small" @click="handleEdit(scope.row)">
-                            编辑
-                        </el-button>
                         <el-popconfirm title="你确定要删除吗" confirm-button-text="确定" cancel-button-text="取消"
                             @confirm="handleDelete(scope.row)">
                             <template #reference>
@@ -58,34 +55,6 @@
                 @size-change="handleSizeChange" @current-change="handlePageChange" class="pagination-wrapper" />
         </el-card>
 
-        <el-dialog v-model="dialogVisible" title="编辑用户" width="500">
-            <el-form ref="userFormRef" style="max-width: 600px" :model="userForm" :rules="userFormRules"
-                label-width="auto" class="demo-ruleForm" status-icon>
-                <el-form-item label="用户名" prop="username">
-                    <el-input v-model="userForm.username" />
-                </el-form-item>
-                <el-form-item label="密码" prop="password">
-                    <el-input v-model="userForm.password" type="password" />
-                </el-form-item>
-                <el-form-item label="角色" prop="role">
-                    <el-select v-model="userForm.role" placeholder="Select" style="width: 100%">
-                        <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="个人简介" prop="introduction">
-                    <el-input v-model="userForm.introduction" type="textarea" />
-                </el-form-item>
-            </el-form>
-
-            <template #footer>
-                <div class="dialog-footer">
-                    <el-button @click="dialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="handleEditConfirm()">
-                        确认
-                    </el-button>
-                </div>
-            </template>
-        </el-dialog>
     </div>
 </template>
 
@@ -93,7 +62,8 @@
 import { ref, reactive, onMounted } from "vue";
 import { usePagination } from '@/composables/usePagination';
 import { useTableSelection } from '@/composables/useTableSelection';
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useLoading } from '@/composables/useLoading';
+import { ElMessage } from 'element-plus'
 import axios from "axios";
 import * as XLSX from 'xlsx';
 import { useRoute } from "vue-router";
@@ -112,90 +82,55 @@ const searchForm = reactive({
     activityId: ""
 });
 
-const dialogVisible = ref(false);
-const userFormRef = ref();
-let userForm = reactive({
-    username: "",
-    password: "",
-    role: 2, //1是管理员，2是编辑
-    introduction: "",
-});
-const userFormRules = reactive({
-    username: [{ required: true, message: "请输入名字", trigger: "blur" }],
-    password: [{ required: true, message: "请输入密码", trigger: "blur" }],
-    role: [{ required: true, message: "请选择权限", trigger: "blur" }],
-    introduction: [{ required: true, message: "请输入介绍", trigger: "blur" }],
-});
-const options = [
-    {
-        label: "管理员",
-        value: 1,
-    },
-    {
-        label: "编辑",
-        value: 2,
-    },
-];
-
 const activityList = ref([]);
 const teacherList = ref([]);
 
 onMounted(async () => {
     if (route.query.activityId) {
         searchForm.activityId = route.query.activityId;
-        isSearchDisabled.value = true; // 设置禁用状态为true
+        isSearchDisabled.value = true;
         handleSearch();
-    }
-    else {
-        await getTableData();
+    } else {
+        await loadTableData();
         await getTeacherList();
     }
-
 });
 
-const getTableData = async () => {
+const enrichWithActivityName = (data, activities) => {
+    data.forEach(item => {
+        activities.forEach(activity => {
+            if (item.activityId === activity._id) {
+                item.activityName = activity.name;
+            }
+        });
+    });
+};
+
+const { run: loadTableData, loading: tableLoading } = useLoading(async () => {
     const res = await axios.get("/api/admin/getFinalList");
     tableData.value = res.data;
     const res1 = await axios.get("/api/admin/getActivityList");
     activityList.value = res1.data;
-    tableData.value.map(item => {
-        res1.data.map(activity => {
-            if (item.activityId === activity._id) {
-                item.activityName = activity.name;
-            }
-        })
-    })
-};
+    enrichWithActivityName(tableData.value, res1.data);
+});
 
 const getTeacherList = async () => {
     const res = await axios.get("/api/teacher/detail");
     teacherList.value = res.data.data;
 }
 
-//编辑回调
-const handleEdit = async (data) => {
-    const res = await axios.get(`/adminapi/user/list/${data._id}`);
-    Object.assign(userForm, res.data.data[0]);
-    dialogVisible.value = true;
-};
-
-//编辑确认回调
-const handleEditConfirm = () => {
-    userFormRef.value.validate(async (valid) => {
-        if (valid) {
-            //更新后端
-            await axios.put(`/adminapi/user/list/${userForm._id}`, userForm);
-            //dialog隐藏
-            dialogVisible.value = false;
-            //获取table数据
-            getTableData();
-        }
-    });
-};
-
 const handleDelete = async (data) => {
-    await axios.delete(`/adminapi/user/list/${data._id}`);
-    getTableData();
+    try {
+        const res = await axios.delete("/api/teacher/cancelSelect", {
+            params: {
+                studentId: data.studentId,
+                teacherId: data.teacherId,
+                activityId: data.activityId,
+            },
+        });
+        ElMessage.success("删除成功");
+        loadTableData();
+    } catch { /* global interceptor handles error toast */ }
 };
 
 //表单事件
@@ -207,13 +142,7 @@ const handleSearch = async () => {
     tableData.value = res.data;
     const res1 = await axios.get("/api/admin/getActivityList");
     activityList.value = res1.data;
-    tableData.value.map(item => {
-        res1.data.map(activity => {
-            if (item.activityId === activity._id) {
-                item.activityName = activity.name;
-            }
-        })
-    })
+    enrichWithActivityName(tableData.value, res1.data);
 };
 
 //重置事件
@@ -260,7 +189,7 @@ const handleExport = async () => {
     const exportData = []
     
     // 添加表头
-    exportData.push(['导师', '学生', '学号', '专业']);
+    exportData.push(['导师', '学生', '学号', '专业', '导师电话']);
     
     // 处理每个导师的学生
     const mergeRanges = []; // 存储合并单元格的范围
@@ -356,15 +285,11 @@ const handleExport = async () => {
     ];
     ws['!cols'] = colWidths;
 
-    // 设置单元格样式
-    const wscols = ws['!cols'];
-    if (!wscols) ws['!cols'] = colWidths;
-
     // 将工作表添加到工作簿
     XLSX.utils.book_append_sheet(wb, ws, '导师制分配表');
 
     // 导出Excel文件
-    XLSX.writeFile(wb, '2025级导师制分配表.xlsx');
+    XLSX.writeFile(wb, `${new Date().getFullYear()}级导师制分配表.xlsx`);
 
     ElMessage.success('导出成功');
 };
@@ -372,7 +297,12 @@ const handleExport = async () => {
 </script>
 
 <style lang="scss" scoped>
-.el-table {
-    margin-top: 50px;
+:deep(.el-table) {
+    margin-top: 18px;
+}
+
+.pagination-wrapper {
+    margin-top: 16px;
+    justify-content: flex-end;
 }
 </style>

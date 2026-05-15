@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="apple-page">
         <el-card>
             <el-page-header content="选择志愿列表" icon="" title="志愿管理" />
             <div style="display: flex;">
@@ -20,9 +20,8 @@
                 </div>
             </div>
 
-            <el-table :data="paginatedData" style="width: 100%" @select="handleSelect" @select-all="handleSelectAll"
+            <el-table :data="paginatedData" v-loading="tableLoading" style="width: 100%"
                 :row-key="row => row._id" ref="tableRef">
-                <!-- <el-table-column type="selection" width="55" /> -->
 
                 <el-table-column prop="studentId" label="学生学号" width="auto" />
                 <el-table-column prop="teacherId" label="老师工号" width="auto" />
@@ -44,16 +43,21 @@
 
                 <el-table-column label="操作" width="auto">
                     <template #default="scope">
-                        <el-button size="small" @click="handleEdit(scope.row)">
-                            编辑
-                        </el-button>
+                        <el-popconfirm :title="scope.row.isChose ? '确定取消选中？' : '确定标记为选中？'"
+                            confirm-button-text="确定" cancel-button-text="取消"
+                            @confirm="handleToggleChose(scope.row)">
+                            <template #reference>
+                                <el-button size="small" :type="scope.row.isChose ? 'warning' : 'success'">
+                                    {{ scope.row.isChose ? '取消选中' : '标记选中' }}
+                                </el-button>
+                            </template>
+                        </el-popconfirm>
                         <el-popconfirm title="你确定要删除吗" confirm-button-text="确定" cancel-button-text="取消"
                             @confirm="handleDelete(scope.row)">
                             <template #reference>
                                 <el-button size="small" type="danger"> 删除 </el-button>
                             </template>
                         </el-popconfirm>
-
                     </template>
                 </el-table-column>
             </el-table>
@@ -61,101 +65,50 @@
                 :page-sizes="[5, 10, 20, 50]" :page-size="pageSize" :current-page="currentPage"
                 @size-change="handleSizeChange" @current-change="handlePageChange" class="pagination-wrapper" />
         </el-card>
-
-        <el-dialog v-model="dialogVisible" title="编辑用户" width="500">
-            <el-form ref="userFormRef" style="max-width: 600px" :model="userForm" :rules="userFormRules"
-                label-width="auto" class="demo-ruleForm" status-icon>
-                <el-form-item label="用户名" prop="username">
-                    <el-input v-model="userForm.username" />
-                </el-form-item>
-                <el-form-item label="密码" prop="password">
-                    <el-input v-model="userForm.password" type="password" />
-                </el-form-item>
-                <el-form-item label="角色" prop="role">
-                    <el-select v-model="userForm.role" placeholder="Select" style="width: 100%">
-                        <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="个人简介" prop="introduction">
-                    <el-input v-model="userForm.introduction" type="textarea" />
-                </el-form-item>
-            </el-form>
-
-            <template #footer>
-                <div class="dialog-footer">
-                    <el-button @click="dialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="handleEditConfirm()">
-                        确认
-                    </el-button>
-                </div>
-            </template>
-        </el-dialog>
     </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from "vue";
-import { dayjs, ElMessage, ElMessageBox } from 'element-plus'
+import { dayjs, ElMessage } from 'element-plus'
 import axios from "axios";
 import { usePagination } from '@/composables/usePagination';
-import { useTableSelection } from '@/composables/useTableSelection';
+import { useLoading } from '@/composables/useLoading';
 
 const tableRef = ref();
 const tableData = ref([]);
 const activityList = ref([]);
 
 const { currentPage, pageSize, paginatedData, handlePageChange, handleSizeChange } = usePagination(tableData);
-const { selectedItems: selectedUsers, handleSelect, handleSelectAll, clearSelection } = useTableSelection(tableRef, paginatedData, currentPage, pageSize);
 
 const searchForm = reactive({
     studentId: "",
     activityId: ""
 });
 
-const dialogVisible = ref(false);
-const userFormRef = ref();
-let userForm = reactive({
-    username: "",
-    password: "",
-    role: 2, //1是管理员，2是编辑
-    introduction: "",
-});
-const userFormRules = reactive({
-    username: [{ required: true, message: "请输入名字", trigger: "blur" }],
-    password: [{ required: true, message: "请输入密码", trigger: "blur" }],
-    role: [{ required: true, message: "请选择权限", trigger: "blur" }],
-    introduction: [{ required: true, message: "请输入介绍", trigger: "blur" }],
-});
-const options = [
-    {
-        label: "管理员",
-        value: 1,
-    },
-    {
-        label: "编辑",
-        value: 2,
-    },
-];
+onMounted(() => loadTableData());
 
+const enrichWithActivityName = (data, activities) => {
+    data.forEach(item => {
+        activities.forEach(activity => {
+            if (item.activityId === activity._id) {
+                item.activityName = activity.name;
+            }
+        });
+    });
+};
 
-onMounted(async () => {
-    await getTableData();
-    // await getActivityName();
-});
-
-const getTableData = async () => {
-    const res = await axios.get("/api/admin/getSelectedList");
-
-    // 先按createTime排序，再按order排序
-    res.data.sort((a, b) => {
-        // 先按 createTime 排序（字符串比较即可，因为 ISO 格式可以直接比较）
+const sortByTimeAndOrder = (data) => {
+    data.sort((a, b) => {
         if (a.createTime < b.createTime) return -1;
         if (a.createTime > b.createTime) return 1;
-
-        // 如果 createTime 相同，再按 order 排序
         return a.order - b.order;
     });
-    // 转换日期格式
+};
+
+const { run: loadTableData, loading: tableLoading } = useLoading(async () => {
+    const res = await axios.get("/api/admin/getSelectedList");
+    sortByTimeAndOrder(res.data);
     tableData.value = res.data.map(item => ({
         ...item,
         createTime: dayjs(item.createTime).format('YYYY-MM-DD HH:mm:ss')
@@ -163,103 +116,63 @@ const getTableData = async () => {
 
     const res1 = await axios.get("/api/admin/getActivityList");
     activityList.value = res1.data;
-    tableData.value.map(item => {
-        res1.data.map(activity => {
-            if (item.activityId === activity._id) {
-                item.activityName = activity.name;
-            }
-        })
-    })
-};
+    enrichWithActivityName(tableData.value, res1.data);
+});
 
-
-//编辑回调
-const handleEdit = async (data) => {
-    const res = await axios.get(`/adminapi/user/list/${data._id}`);
-    Object.assign(userForm, res.data.data[0]);
-    dialogVisible.value = true;
-};
-
-//编辑确认回调
-const handleEditConfirm = () => {
-    userFormRef.value.validate(async (valid) => {
-        if (valid) {
-            //更新后端
-            await axios.put(`/adminapi/user/list/${userForm._id}`, userForm);
-            //dialog隐藏
-            dialogVisible.value = false;
-            //获取table数据
-            getTableData();
-        }
-    });
+const handleToggleChose = async (row) => {
+    try {
+        const res = await axios.put("/api/student/updateTeacher", {
+            studentId: row.studentId,
+            teacherId: row.teacherId,
+            activityId: row.activityId,
+        });
+        ElMessage.success(row.isChose ? '已取消选中' : '已标记选中');
+        loadTableData();
+    } catch { /* global interceptor handles error toast */ }
 };
 
 const handleDelete = async (data) => {
-    const res = await axios.delete("/api/admin/deleteSelected", {
-        data: {
-            _id: data._id
+    try {
+        const res = await axios.delete("/api/admin/deleteSelected", {
+            data: { _id: data._id }
+        });
+        if (res.data.code === 200) {
+            ElMessage.success('删除成功');
+        } else {
+            ElMessage.error('删除失败');
         }
-    })
-    if (res.data.code === 200) {
-        ElMessage({
-            message: '删除成功',
-            type: 'success',
-        })
-    } else {
-        ElMessage({
-            message: '删除失败',
-            type: 'error',
-        })
-    }
-    getTableData();
+        loadTableData();
+    } catch { /* global interceptor handles error toast */ }
 };
 
-//表单事件
-//搜索事件
 const handleSearch = async () => {
     const res = await axios.get("/api/admin/getSelectedList", {
         params: searchForm,
     });
-    // 先按createTime排序，再按order排序
-    res.data.sort((a, b) => {
-        // 先按 createTime 排序（字符串比较即可，因为 ISO 格式可以直接比较）
-        if (a.createTime < b.createTime) return -1;
-        if (a.createTime > b.createTime) return 1;
-
-        // 如果 createTime 相同，再按 order 排序
-        return a.order - b.order;
-    });
-    // 转换日期格式
-
+    sortByTimeAndOrder(res.data);
     tableData.value = res.data.map(item => ({
         ...item,
         createTime: dayjs(item.createTime).format('YYYY-MM-DD HH:mm:ss')
     }));
     const res1 = await axios.get("/api/admin/getActivityList");
     activityList.value = res1.data;
-    tableData.value.map(item => {
-        res1.data.map(activity => {
-            if (item.activityId === activity._id) {
-                item.activityName = activity.name;
-            }
-        })
-    })
-    clearSelection();
+    enrichWithActivityName(tableData.value, res1.data);
 };
 
-//重置事件
 const handleReset = () => {
     searchForm.studentId = "";
     searchForm.activityId = "";
-    // selectedUsers.value = []; // 重置时清空已选
-    getTableData();
+    loadTableData();
 };
-
-
 </script>
 
 <style lang="scss" scoped>
-.el-table {
-    margin-top: 50px;
+:deep(.el-table) {
+    margin-top: 18px;
+}
+
+.pagination-wrapper {
+    margin-top: 16px;
+    justify-content: flex-end;
 }
 </style>
