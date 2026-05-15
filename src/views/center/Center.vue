@@ -72,7 +72,7 @@ import { ElMessage } from "element-plus";
 const store = useStore();
 const avatarUrl = computed(() =>
   store.state.userInfo.avatar
-    ? "http://localhost:3000" + store.state.userInfo.avatar
+    ? process.env.VUE_APP_UPLOAD_BASE + store.state.userInfo.avatar
     : `https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png`
 );
 const { username, gender, introduction, avatar } = store.state.userInfo;
@@ -114,7 +114,6 @@ const handleChange = (file) => {
 const submitForm = () => {
   userFormRef.value.validate(async (valid) => {
     if (valid) {
-      console.log("submit", userForm);
       const res = await upload("/adminapi/user/upload", userForm);
 
       if (res.ActionType === "OK") {

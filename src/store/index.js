@@ -23,7 +23,7 @@ export default createStore({
         ...value
       }
     },
-    clearUserInfo(state, value) {
+    clearUserInfo(state) {
       state.userInfo = {}
     }
   },
