@@ -10,7 +10,7 @@ const app = createApp(App)
 
 app.directive('admin', {
     mounted(el) {
-        if (store.state.userInfo.role !== 1) {
+        if (store.state.userInfo.role !== 'admin') {
             el.parentNode && el.parentNode.removeChild(el)
         }
     }

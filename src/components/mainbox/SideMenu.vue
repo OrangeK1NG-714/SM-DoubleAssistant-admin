@@ -54,7 +54,6 @@
         </template>
         <el-menu-item index="/volunteer/selectVolunteerList">选择志愿列表</el-menu-item>
         <el-menu-item index="/volunteer/finalVolunteerList">最终志愿列表</el-menu-item>
-        <el-menu-item index="/volunteer/volunteerAdd">添加志愿</el-menu-item>
       </el-sub-menu>
     </el-menu>
   </el-aside>

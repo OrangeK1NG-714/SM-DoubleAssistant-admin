@@ -9,31 +9,33 @@ const routes = [
     },
     {
         path: "/user-manage/addUser",
+        requireAdmin: true,
         component: () => import('../views/user-manage/addUser.vue'),
     },
     {
         path: "/user-manage/userList",
+        requireAdmin: true,
         component: () => import('../views/user-manage/userList.vue'),
     },
     {
         path: "/activity/activityList",
+        requireAdmin: true,
         component: () => import('@/views/activity/activityList.vue'),
     },
     {
         path: "/activity/addActivity",
+        requireAdmin: true,
         component: () => import('@/views/activity/addActivity.vue'),
     },
     {
         path: "/volunteer/selectVolunteerList",
+        requireAdmin: true,
         component: () => import('@/views/volunteer/selectVolunteerList.vue'),
     },
     {
         path: "/volunteer/finalVolunteerList",
+        requireAdmin: true,
         component: () => import('@/views/volunteer/finalVolunteerList.vue'),
-    },
-    {
-        path: "/volunteer/volunteerAdd",
-        component: () => import('@/views/volunteer/volunteerAdd.vue'),
     },
     {
         path: "/",
