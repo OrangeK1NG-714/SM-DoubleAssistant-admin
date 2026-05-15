@@ -1,16 +1,16 @@
 <template>
-  <div>
+  <div class="apple-page">
     <el-page-header
       content="个人中心"
       icon=""
-      title="3D扫描数字化后台管理系统"
+      title="数媒双选助手后台管理系统"
     />
     <el-row :gutter="20" class="el-row">
       <el-col :span="8">
         <el-card class="box-card">
           <el-avatar :size="80" :src="avatarUrl" />
           <h3>{{ store.state.userInfo.username }}</h3>
-          <h5>{{ store.state.userInfo.role === 1 ? "管理员" : "编辑" }}</h5>
+          <h5>{{ ROLE_LABEL_MAP[store.state.userInfo.role] || '未知' }}</h5>
         </el-card>
       </el-col>
       <el-col :span="16">
@@ -54,7 +54,7 @@
               <Upload :avatar="userForm.avatar" @kerwinchange="handleChange" />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="submitForm()">更新</el-button>
+              <el-button type="primary" :loading="updateLoading" @click="doUpdate()">更新</el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -68,6 +68,8 @@ import { computed, ref, reactive } from "vue";
 import upload from "@/util/upload";
 import Upload from "@/components/upload/Upload.vue";
 import { ElMessage } from "element-plus";
+import { useDebounce } from "@/composables/useDebounce";
+import { ROLE_LABEL_MAP } from "@/constants/roles";
 
 const store = useStore();
 const avatarUrl = computed(() =>
@@ -110,19 +112,10 @@ const handleChange = (file) => {
   userForm.avatar = URL.createObjectURL(file);
   userForm.file = file;
 };
-//更新提交
-const submitForm = () => {
-  userFormRef.value.validate(async (valid) => {
-    if (valid) {
-      const res = await upload("/adminapi/user/upload", userForm);
-
-      if (res.ActionType === "OK") {
-        store.commit("changeUserInfo", res.data);
-        ElMessage.success("更新成功");
-      }
-    }
-  });
-};
+const { run: doUpdate, loading: updateLoading } = useDebounce(async () => {
+  await userFormRef.value.validate();
+  ElMessage.warning("个人信息更新功能暂未开放");
+});
 </script>
 <style scoped lang="scss">
 .el-row {

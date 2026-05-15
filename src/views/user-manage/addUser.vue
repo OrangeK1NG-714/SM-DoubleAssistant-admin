@@ -37,7 +37,7 @@
 
 
         <el-form-item>
-          <el-button type="primary" @click="submitOneForm()">添加用户</el-button>
+          <el-button type="primary" :loading="submitOneLoading" @click="doSubmitOne()">添加用户</el-button>
         </el-form-item>
       </el-form>
     </template>
@@ -45,8 +45,17 @@
     <!-- 添加多个用户 -->
     <template v-else>
       <el-card>
-        <div>后面放上传文件的格式提示</div>
-
+        <el-alert type="info" :closable="false" show-icon title="Excel格式要求">
+          <template #default>
+            <p>请上传 .xlsx 或 .xls 文件，表头需包含以下列：</p>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+              <li><strong>学号/工号</strong> — 用户登录账号</li>
+              <li><strong>姓名</strong> — 用户真实姓名</li>
+              <li><strong>角色</strong> — 填写 "管理员"、"教师" 或 "学生"</li>
+            </ul>
+            <p>默认密码为 123456，用户可在登录后修改。</p>
+          </template>
+        </el-alert>
       </el-card>
       <el-form ref="userFormRef" style="max-width: 600px" :model="userBatchForm" label-width="auto"
         class="demo-ruleForm" status-icon>
@@ -64,7 +73,7 @@
           </template>
         </el-upload>
         <el-form-item>
-          <el-button type="primary" @click="submitBatchForm()">添加用户</el-button>
+          <el-button type="primary" :loading="submitBatchLoading" @click="doSubmitBatch()">添加用户</el-button>
         </el-form-item>
       </el-form>
     </template>
@@ -76,6 +85,7 @@ import { ref, reactive } from "vue";
 import { UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from "vue-router";
 import { ElMessage } from 'element-plus';
+import { useDebounce } from "@/composables/useDebounce";
 
 //切换添加模式
 const addMode = ref('single');
@@ -180,36 +190,26 @@ const teacherTypeOptions =[
   },
 ]
 const router = useRouter()
-//更新单一新增
-const submitOneForm = () => {
 
-  userFormRef.value.validate(async (valid) => {
-    if (valid) {
-      await axios.post("/api/admin/register", userForm);
-      router.push("/user-manage/userList");
-    }
-  });
-};
-//更新批量新增
-const submitBatchForm = () => {
-  userFormRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        const results = await Promise.all(userBatchForm.users.map(async (user) => {
-          return await axios.post("/api/admin/register", user);
-        }))
-        const successCount = results.filter(r => r.status === 200).length;
-        ElMessage.success(`成功创建${successCount}个用户，失败${userBatchForm.users.length - successCount}个`);
-      } catch (error) {
-        ElMessage.error('批量创建用户失败：' + error.message);
-      }
-      // userBatchForm.users.forEach(async (user) => {
-      //   await axios.post("/api/admin/register", user);
-      // })
-      // router.push("/user-manage/userList");
-    }
-  });
-};
+const { run: doSubmitOne, loading: submitOneLoading } = useDebounce(async () => {
+  await userFormRef.value.validate();
+  await axios.post("/api/admin/register", userForm);
+  ElMessage.success("用户添加成功");
+  router.push("/user-manage/userList");
+});
+
+const { run: doSubmitBatch, loading: submitBatchLoading } = useDebounce(async () => {
+  if (userBatchForm.users.length === 0) {
+    ElMessage.warning("请先上传Excel文件");
+    return;
+  }
+  const results = await Promise.all(
+    userBatchForm.users.map(user => axios.post("/api/admin/register", user).catch(() => null))
+  );
+  const successCount = results.filter(r => r?.data?.code === 200).length;
+  const failCount = userBatchForm.users.length - successCount;
+  ElMessage.success(`成功创建${successCount}个用户${failCount > 0 ? `，失败${failCount}个` : ''}`);
+});
 </script>
 <style lang="scss" scoped>
 .demo-ruleForm {

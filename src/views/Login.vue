@@ -24,7 +24,7 @@
           <el-input type="password" v-model="loginForm.password" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" class="submit-btn" @click="submitForm()">登录</el-button>
+          <el-button type="primary" class="submit-btn" :loading="loginLoading" @click="doLogin()">登录</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -37,6 +37,7 @@ import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import axios from "axios";
 import { useStore } from "vuex";
+import { useDebounce } from "@/composables/useDebounce";
 
 const store = useStore();
 
@@ -67,22 +68,18 @@ const loginRules = reactive({
 const router = useRouter();
 const particlesLoaded = async () => {};
 
-const submitForm = () => {
-  loginFormRef.value.validate((valid) => {
-    if (valid) {
-      axios.post("/api/user/login", loginForm).then((res) => {
-        if (res.data.code === 200) {
-          localStorage.setItem("token", res.data.data.accessToken);
-          store.commit("changeUserInfo", res.data.data);
-          store.commit("changeGetterRouter", false);
-          router.push("/index");
-        } else {
-          ElMessage.error("用户名和密码不匹配");
-        }
-      });
-    }
-  });
-};
+const { run: doLogin, loading: loginLoading } = useDebounce(async () => {
+  await loginFormRef.value.validate();
+  const res = await axios.post("/api/user/login", loginForm);
+  if (res.data.code === 200) {
+    localStorage.setItem("token", res.data.data.accessToken);
+    store.commit("changeUserInfo", res.data.data);
+    store.commit("changeGetterRouter", false);
+    router.push("/index");
+  } else {
+    ElMessage.error(res.data.message || "用户名和密码不匹配");
+  }
+});
 
 const options = {
   background: {

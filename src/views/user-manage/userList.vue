@@ -85,7 +85,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleEditConfirm()">
+          <el-button type="primary" :loading="editLoading" @click="handleEditConfirm()">
             确认
           </el-button>
         </div>
@@ -130,7 +130,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="introductionDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleUpdateIntroductionConfirm">确认修改</el-button>
+          <el-button type="primary" :loading="resumeUploadLoading" @click="doResumeUpload()">确认修改</el-button>
         </div>
       </template>
     </el-dialog>
@@ -161,6 +161,9 @@ import { UploadFilled } from '@element-plus/icons-vue'
 import axios from "axios";
 import { usePagination } from '@/composables/usePagination';
 import { useTableSelection } from '@/composables/useTableSelection';
+import { useDebounce } from '@/composables/useDebounce';
+import { useLoading } from '@/composables/useLoading';
+import { ROLE_OPTIONS } from '@/constants/roles';
 
 const tableRef = ref();
 const tableData = ref([]);
@@ -178,7 +181,7 @@ const userFormRef = ref();
 let userForm = reactive({
   username: "",
   password: "",
-  role: 2, //1是管理员，2是编辑
+  role: "student",
   introduction: "",
 });
 
@@ -198,16 +201,7 @@ const userFormRules = reactive({
   role: [{ required: true, message: "请选择权限", trigger: "blur" }],
   introduction: [{ required: true, message: "请输入介绍", trigger: "blur" }],
 });
-const options = [
-  {
-    label: "管理员",
-    value: 1,
-  },
-  {
-    label: "编辑",
-    value: 2,
-  },
-];
+const options = ROLE_OPTIONS;
 
 onMounted(async () => {
   await getTableData();
@@ -219,30 +213,25 @@ const getTableData = async () => {
   return res.data;
 };
 
-//编辑回调
-const handleEdit = async (data) => {
-  // const res = await axios.get(`/adminapi/user/list/${data._id}`);
-  // Object.assign(userForm, res.data.data[0]);
-  // dialogVisible.value = true;
+const handleEdit = (data) => {
+  Object.assign(userForm, {
+    _id: data._id,
+    username: data.username,
+    password: "",
+    role: data.role,
+    introduction: data.introduction || "",
+  });
+  dialogVisible.value = true;
 };
 
-//编辑确认回调
-const handleEditConfirm = () => {
-  userFormRef.value.validate(async (valid) => {
-    if (valid) {
-      //更新后端
-      await axios.put(`/adminapi/user/list/${userForm._id}`, userForm);
-      //dialog隐藏
-      dialogVisible.value = false;
-      //获取table数据
-      getTableData();
-    }
-  });
-};
+const { run: handleEditConfirm, loading: editLoading } = useDebounce(async () => {
+  await userFormRef.value.validate();
+  ElMessage.warning("编辑功能暂未开放");
+  dialogVisible.value = false;
+});
 
 const handleDelete = async (data) => {
-  await axios.delete(`/adminapi/user/list/${data._id}`);
-  getTableData();
+  ElMessage.warning("删除功能暂未开放");
 };
 
 //重置密码
@@ -391,52 +380,24 @@ const beforeUpload = (file) => {
   return true;
 };
 
-// 确认修改老师简历
-const handleUpdateIntroductionConfirm = async () => {
-  // 检查是否已上传文件
+const { run: doResumeUpload, loading: resumeUploadLoading } = useDebounce(async () => {
   if (!introductionForm.uploadedFile) {
     ElMessage.warning('请先上传简历图片');
     return;
   }
-    
-  try {
-    // 创建FormData对象来上传文件
-    const formData = new FormData();
-    // 添加文件内容
-    formData.append('file', introductionForm.uploadedFile.raw);
-    // 添加其他表单字段
-    formData.append('teacherId', introductionForm.teacherId);
-    formData.append('resumeName', introductionForm.resumeName);
-    formData.append('resumePath', introductionForm.resumePath);
-    // 调用后端API上传文件，不需要设置Content-Type，axios会自动设置为multipart/form-data
-    const res = await axios.post(`/api/teacher/uploadTeacherResume`, formData);
-    
-    if (res.data && res.data.code === 200) {
-      // 创建blob URL用于显示
-      const blob = new Blob([introductionForm.uploadedFile.raw], {
-        type: introductionForm.uploadedFile.raw.type
-      });
-      const blobUrl = URL.createObjectURL(blob);
-      
-      // 设置resumePath为blob URL，用于前端显示
-      introductionForm.resumePath = blobUrl;
-      
-      ElMessage.success('老师简历上传成功');
-      
-      // 在关闭对话框前记得清理blob URL避免内存泄漏
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-        introductionDialogVisible.value = false;
-      }, 100);
-      
-      getTableData(); // 重新获取表格数据
-    } else {
-      ElMessage.error('上传失败：' + (res.data?.message || '服务器错误'));
-    }
-  } catch (error) {
-    ElMessage.error('上传失败，请重试');
+  const formData = new FormData();
+  formData.append('file', introductionForm.uploadedFile.raw);
+  formData.append('teacherId', introductionForm.teacherId);
+  formData.append('resumeName', introductionForm.resumeName);
+  const res = await axios.post('/api/teacher/uploadTeacherResume', formData);
+  if (res.data?.code === 200) {
+    ElMessage.success('老师简历上传成功');
+    introductionDialogVisible.value = false;
+    getTableData();
+  } else {
+    ElMessage.error('上传失败：' + (res.data?.message || '服务器错误'));
   }
-};
+});
 
 // 查看老师简历对话框相关
 const viewIntroductionDialogVisible = ref(false);
