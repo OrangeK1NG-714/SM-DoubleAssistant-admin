@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="apple-page">
     <el-page-header content="添加用户" icon="" title="用户管理" />
 
     <el-radio-group v-model="addMode" style="margin-bottom: 20px">
@@ -225,6 +225,25 @@ const submitBatchForm = () => {
 </script>
 <style lang="scss" scoped>
 .demo-ruleForm {
-  margin-top: 50px;
+  margin-top: 18px;
+  max-width: 680px !important;
+}
+
+:deep(.el-radio-group) {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+  padding: 5px;
+}
+
+:deep(.el-radio-button__inner) {
+  border: none !important;
+  border-radius: 999px !important;
+}
+
+:deep(.el-upload-dragger) {
+  border-radius: 16px;
+  border-color: rgba(0, 113, 227, 0.25);
+  background: rgba(255, 255, 255, 0.75);
 }
 </style>

@@ -1,15 +1,15 @@
 <template>
-    <div>
+    <div class="apple-page">
         <el-page-header content="添加活动" icon="" title="活动管理" />
         <el-form ref="activityFormRef" style="max-width: 600px" :model="activityForm" :rules="activityFormRules"
             label-width="auto" class="demo-ruleForm" status-icon>
-            <el-form-item label="活动名称" prop="name" >
+            <el-form-item label="活动名称" prop="name">
                 <el-input v-model="activityForm.name" />
             </el-form-item>
             <el-form-item label="活动描述" prop="description">
                 <el-input v-model="activityForm.description" />
             </el-form-item>
-            <el-form-item label="活动开始-结束时间" >
+            <el-form-item label="活动开始-结束时间">
                 <el-date-picker v-model="tempDateRange1" type="datetimerange" start-placeholder="开始时间"
                     end-placeholder="结束时间" format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DDTHH:mm:ss"
                     @change="handleDateChange1" />
@@ -42,7 +42,7 @@
     </div>
 </template>
 <script setup>
-import { ref, reactive, watch } from "vue";
+import { ref, reactive } from "vue";
 
 import { useRouter } from "vue-router";
 import { ElMessage } from 'element-plus';
@@ -75,7 +75,6 @@ const handleDateChange2 = (val) => {
         activityForm.firstChooseStartDate = '';
         activityForm.firstChooseEndDate = '';
     }
-    console.log(activityForm.firstChooseStartDate, activityForm.firstChooseEndDate);
 };
 const handleDateChange3 = (val) => {
     if (val && val.length === 2) {
@@ -85,7 +84,6 @@ const handleDateChange3 = (val) => {
         activityForm.secondChooseStartDate = '';
         activityForm.secondChooseEndDate = '';
     }
-    console.log(activityForm.secondChooseStartDate, activityForm.secondChooseEndDate);
 };
 const handleDateChange4 = (val) => {
     if (val && val.length === 2) {
@@ -95,7 +93,6 @@ const handleDateChange4 = (val) => {
         activityForm.thirdChooseStartDate = '';
         activityForm.thirdChooseEndDate = '';
     }
-    console.log(activityForm.thirdChooseStartDate, activityForm.thirdChooseEndDate);
 };
 const handleDateChange5 = (val) => {
     if (val && val.length === 2) {
@@ -105,7 +102,6 @@ const handleDateChange5 = (val) => {
         activityForm.stdChooseStartDate = '';
         activityForm.stdChooseEndDate = '';
     }
-    console.log(activityForm.stdChooseStartDate, activityForm.stdChooseEndDate);
 };
 
 
@@ -124,37 +120,25 @@ const activityForm = reactive({
     stdChooseStartDate: '',
     stdChooseEndDate: ''
 });
-const userBatchForm = reactive({
-    users: [],
-});
 
 const activityFormRules = reactive({
     name: [{ required: true, message: "请输入活动名称", trigger: "blur" }],
-    description: [{ required: true, message: "请输入活动描述", trigger: "blur" }], 
+    description: [{ required: true, message: "请输入活动描述", trigger: "blur" }],
 });
-// //更新单一新增
+
 const submitOneForm = () => {
-    console.log(activityForm);
-    if(activityForm.startDate==='')
-    return ElMessage.error('请输入活动开始时间');
-    if(activityForm.firstChooseEndDate==='')
-    return ElMessage.error('请输入第一志愿时间');
-    if(activityForm.secondChooseEndDate==='')
-    return ElMessage.error('请输入第二志愿时间');
-    if(activityForm.thirdChooseEndDate==='')
-    return ElMessage.error('请输入第三志愿时间');
-    if(activityForm.stdChooseEndDate==='')
-    return ElMessage.error('请输入学生填报志愿时间');
+    if (activityForm.startDate === '') return ElMessage.error('请输入活动开始时间');
+    if (activityForm.firstChooseEndDate === '') return ElMessage.error('请输入第一志愿时间');
+    if (activityForm.secondChooseEndDate === '') return ElMessage.error('请输入第二志愿时间');
+    if (activityForm.thirdChooseEndDate === '') return ElMessage.error('请输入第三志愿时间');
+    if (activityForm.stdChooseEndDate === '') return ElMessage.error('请输入学生填报志愿时间');
+
     activityFormRef.value.validate(async (valid) => {
         if (valid) {
-            const res =  await axios.post("/api/admin/addActivity", activityForm)
-            console.log(res);
-            if(res.data.code === 200){
+            const res = await axios.post("/api/admin/addActivity", activityForm)
+            if (res.data.code === 200) {
                 ElMessage.success('添加成功');
                 router.push("/activity/activityList");
-            }else{
-            console.log(123);
-            
             }
         }
     })
@@ -163,6 +147,7 @@ const submitOneForm = () => {
 </script>
 <style lang="scss" scoped>
 .demo-ruleForm {
-    margin-top: 50px;
+    margin-top: 18px;
+    max-width: 760px !important;
 }
 </style>

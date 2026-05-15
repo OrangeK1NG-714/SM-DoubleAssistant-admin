@@ -6,7 +6,7 @@ axios.interceptors.request.use(
         //请求发送前获取token值
         const token = localStorage.getItem("token");
         //添加token令牌
-        config.headers.Authorization = `${token}`
+        config.headers.Authorization = `Bearer ${token}`
         // console.log(config);
         
         return config;

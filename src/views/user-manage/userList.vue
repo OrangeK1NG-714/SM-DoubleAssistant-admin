@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="apple-page">
     <el-card>
       <el-page-header content="用户列表" icon="" title="用户管理" />
       <div style="display: flex;">
@@ -571,7 +571,7 @@ const handleViewIntroductionDialogClose = () => {
 
 <style lang="scss" scoped>
 .el-table {
-  margin-top: 50px;
+  margin-top: 18px;
 }
 
 .introduction-container {
@@ -581,8 +581,8 @@ const handleViewIntroductionDialogClose = () => {
 .current-resume {
   margin: 10px 0 20px 0;
   padding: 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
   text-align: center;
 }
 
@@ -591,11 +591,24 @@ const handleViewIntroductionDialogClose = () => {
   padding: 20px;
   text-align: center;
   color: #909399;
-  border: 1px dashed #dcdfe6;
-  border-radius: 4px;
+  border: 1px dashed rgba(15, 23, 42, 0.18);
+  border-radius: 12px;
 }
 
 .upload-demo {
   margin-top: 10px;
+}
+
+.pagination-wrapper {
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+:deep(.el-table) {
+  margin-top: 18px;
+}
+
+:deep(.el-upload-dragger) {
+  border-radius: 14px;
 }
 </style>

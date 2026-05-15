@@ -1,56 +1,52 @@
 <template>
-  <div>
-    <!-- 粒子背景 -->
-    <vue-particles
-      id="tsparticles"
-      :particlesLoaded="particlesLoaded"
-      :options="options"
-    />
-    <!-- 登录表单 -->
-    <div class="formContainer">
-      <h3>数媒双选助手后台管理系统</h3>
+  <div class="login-page">
+    <vue-particles id="tsparticles" :particlesLoaded="particlesLoaded" :options="options" />
+
+    <div class="login-panel">
+      <div class="panel-header">
+        <p class="badge">Management Console</p>
+        <h2>数媒双选助手后台</h2>
+        <span>欢迎回来，请使用账号登录</span>
+      </div>
+
       <el-form
         :model="loginForm"
         status-icon
         :rules="loginRules"
         ref="loginFormRef"
-        label-width="80px"
-        class="loginForm"
+        label-position="top"
+        class="login-form"
       >
         <el-form-item label="用户名" prop="username">
           <el-input v-model="loginForm.username" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input
-            type="password"
-            v-model="loginForm.password"
-            autocomplete="off"
-          ></el-input>
+          <el-input type="password" v-model="loginForm.password" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm()">登录</el-button>
-          <!-- <el-button @click="resetForm('ruleForm')">重置</el-button> -->
+          <el-button type="primary" class="submit-btn" @click="submitForm()">登录</el-button>
         </el-form-item>
       </el-form>
     </div>
   </div>
 </template>
+
 <script setup>
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import axios from "axios";
 import { useStore } from "vuex";
+
 const store = useStore();
-const handleLogin = () => {};
-//表单绑定的响应式对象
+
 const loginForm = reactive({
   username: "",
   password: "",
 });
-//表单的引用对象
+
 const loginFormRef = ref();
-//表单校验规则
+
 const loginRules = reactive({
   username: [
     {
@@ -67,18 +63,16 @@ const loginRules = reactive({
     },
   ],
 });
-//引用router钩子
+
 const router = useRouter();
-//登录按钮的回调函数
+const particlesLoaded = async () => {};
+
 const submitForm = () => {
-  //1.  校验表单
   loginFormRef.value.validate((valid) => {
     if (valid) {
       axios.post("/api/user/login", loginForm).then((res) => {
-        console.log(res.data);
         if (res.data.code === 200) {
-          console.log(123);
-          
+          localStorage.setItem("token", res.data.data.accessToken);
           store.commit("changeUserInfo", res.data.data);
           store.commit("changeGetterRouter", false);
           router.push("/index");
@@ -88,15 +82,12 @@ const submitForm = () => {
       });
     }
   });
-  //2.  拿到表单数据，提交后台
-  //3.  设置token
-  // localStorage.setItem("token", "kerwin");
 };
-//配置Login页面粒子背景
+
 const options = {
   background: {
     color: {
-      value: "#2d3a4b",
+      value: "#f2f6ff",
     },
   },
   fpsLimit: 120,
@@ -108,34 +99,27 @@ const options = {
       },
       onHover: {
         enable: true,
-        mode: "repulse",
+        mode: "grab",
       },
     },
     modes: {
-      bubble: {
-        distance: 400,
-        duration: 2,
-        opacity: 0.8,
-        size: 40,
-      },
       push: {
-        quantity: 4,
+        quantity: 2,
       },
-      repulse: {
-        distance: 200,
-        duration: 0.4,
+      grab: {
+        distance: 160,
       },
     },
   },
   particles: {
     color: {
-      value: "#ffffff",
+      value: "#8aa4c8",
     },
     links: {
-      color: "#ffffff",
-      distance: 150,
+      color: "#bfd2ef",
+      distance: 140,
       enable: true,
-      opacity: 0.5,
+      opacity: 0.55,
       width: 1,
     },
     move: {
@@ -143,23 +127,23 @@ const options = {
       enable: true,
       outModes: "bounce",
       random: false,
-      speed: 6,
+      speed: 1.6,
       straight: false,
     },
     number: {
       density: {
         enable: true,
       },
-      value: 80,
+      value: 55,
     },
     opacity: {
-      value: 0.5,
+      value: 0.75,
     },
     shape: {
       type: "circle",
     },
     size: {
-      value: { min: 1, max: 5 },
+      value: { min: 1, max: 3 },
     },
   },
   detectRetina: true,
@@ -167,26 +151,63 @@ const options = {
 </script>
 
 <style lang="scss" scoped>
-.formContainer {
-  width: 500px;
-  height: 300px;
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba($color: #000000, $alpha: 0.5);
-  color: white;
-  text-align: center;
-  padding: 20px;
+.login-page {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
 
-  h3 {
-    font-size: 24px;
+#tsparticles {
+  position: absolute;
+  inset: 0;
+}
+
+.login-panel {
+  width: 460px;
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(22px);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 48px rgba(24, 39, 74, 0.14);
+  padding: 30px 30px 22px;
+}
+
+.panel-header {
+  margin-bottom: 18px;
+
+  .badge {
+    width: fit-content;
+    border-radius: 999px;
+    background: rgba(0, 113, 227, 0.1);
+    color: #006fdf;
+    font-size: 12px;
+    padding: 4px 10px;
+    margin-bottom: 8px;
   }
-  .loginForm {
-    margin: 20px;
+
+  h2 {
+    font-size: 26px;
+    line-height: 1.2;
+    color: #141a24;
+    margin-bottom: 4px;
+  }
+
+  span {
+    color: #6d7483;
+    font-size: 13px;
   }
 }
-:deep() .el-form-item__label {
-  color: white;
+
+.login-form {
+  margin-top: 10px;
+}
+
+.submit-btn {
+  width: 100%;
+  height: 44px;
 }
 </style>
