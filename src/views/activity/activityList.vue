@@ -77,57 +77,57 @@
         </el-form-item>
         <el-form-item label="活动开始-结束时间">
           <el-date-picker
-            v-model="tempDateRange1"
+            v-model="activityDate.dateRange.value"
             type="datetimerange"
             start-placeholder="开始时间"
             end-placeholder="结束时间"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DDTHH:mm:ss"
-            @change="handleDateChange1"
+            @change="activityDate.handleDateChange"
           />
         </el-form-item>
         <el-form-item label="教师选择第一志愿开始-结束时间">
           <el-date-picker
-            v-model="tempDateRange2"
+            v-model="firstChooseDate.dateRange.value"
             type="datetimerange"
             start-placeholder="开始时间"
             end-placeholder="结束时间"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DDTHH:mm:ss"
-            @change="handleDateChange2"
+            @change="firstChooseDate.handleDateChange"
           />
         </el-form-item>
         <el-form-item label="教师选择第二志愿开始-结束时间">
           <el-date-picker
-            v-model="tempDateRange3"
+            v-model="secondChooseDate.dateRange.value"
             type="datetimerange"
             start-placeholder="开始时间"
             end-placeholder="结束时间"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DDTHH:mm:ss"
-            @change="handleDateChange3"
+            @change="secondChooseDate.handleDateChange"
           />
         </el-form-item>
         <el-form-item label="教师选择第三志愿开始-结束时间">
           <el-date-picker
-            v-model="tempDateRange4"
+            v-model="thirdChooseDate.dateRange.value"
             type="datetimerange"
             start-placeholder="开始时间"
             end-placeholder="结束时间"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DDTHH:mm:ss"
-            @change="handleDateChange4"
+            @change="thirdChooseDate.handleDateChange"
           />
         </el-form-item>
         <el-form-item label="学生填报志愿开始-结束时间">
           <el-date-picker
-            v-model="tempDateRange5"
+            v-model="stdChooseDate.dateRange.value"
             type="datetimerange"
             start-placeholder="开始时间"
             end-placeholder="结束时间"
             format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DDTHH:mm:ss"
-            @change="handleDateChange5"
+            @change="stdChooseDate.handleDateChange"
           />
         </el-form-item>
       </el-form>
@@ -344,188 +344,33 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, onMounted, computed, watch, nextTick } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import axios from "axios";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
+import { usePagination } from "@/composables/usePagination";
+import { useTableSelection } from "@/composables/useTableSelection";
+import { useDateRange } from "@/composables/useDateRange";
 
 const router = useRouter();
 
-const currentPage = ref(1);
-const pageSize = ref(10);
 const tableRef = ref(); // 添加表格引用
 const viewTableRef = ref(); // 查看活动用户表格引用
-// 新增弹窗分页变量
-const currentPage2 = ref(1);
-const pageSize2 = ref(10);
-const currentPage3 = ref(1);
-const pageSize3 = ref(10);
 
+const tableData = ref([]);
 const userList = ref([]);
 const viewUserList = ref([]);
 const currentActivityId = ref("");
 
-// 分页相关函数
-const handlePageChange = (val) => {
-  currentPage.value = val;
-};
-
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1; // 重置到第一页
-};
-const handlePageChange2 = (val) => {
-  currentPage2.value = val;
-};
-
-const handleSizeChange2 = (val) => {
-  pageSize2.value = val;
-  currentPage2.value = 1;
-};
-
-const handlePageChange3 = (val) => {
-  currentPage3.value = val;
-};
-
-const handleSizeChange3 = (val) => {
-  pageSize3.value = val;
-  currentPage3.value = 1;
-};
-
-// 计算当前页显示的数据
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return tableData.value.slice(start, end);
-});
-
-const paginatedUserData = computed(() => {
-  const start = (currentPage2.value - 1) * pageSize2.value;
-  const end = start + pageSize2.value;
-  return userList.value.slice(start, end);
-});
-
-const paginatedViewUserData = computed(() => {
-  const start = (currentPage3.value - 1) * pageSize3.value;
-  const end = start + pageSize3.value;
-  return viewUserList.value.slice(start, end);
-});
+// Pagination composables
+const { currentPage, pageSize, paginatedData, handlePageChange, handleSizeChange } = usePagination(tableData);
+const { currentPage: currentPage2, pageSize: pageSize2, paginatedData: paginatedUserData, handlePageChange: handlePageChange2, handleSizeChange: handleSizeChange2 } = usePagination(userList);
+const { currentPage: currentPage3, pageSize: pageSize3, paginatedData: paginatedViewUserData, handlePageChange: handlePageChange3, handleSizeChange: handleSizeChange3 } = usePagination(viewUserList);
 
 const userForm = ref([]);
-// 新增临时日期范围变量
-const tempDateRange1 = ref([]);
-const tempDateRange2 = ref([]);
-const tempDateRange3 = ref([]);
-const tempDateRange4 = ref([]);
-const tempDateRange5 = ref([]);
 
-// 处理日期变化
-const handleDateChange1 = (val) => {
-  if (val && val.length === 2) {
-    editForm.startDate = val[0];
-    editForm.endDate = val[1];
-  } else {
-    editForm.startDate = "";
-    editForm.endDate = "";
-  }
-};
-const handleDateChange2 = (val) => {
-  if (val && val.length === 2) {
-    editForm.firstChooseStartDate = val[0];
-    editForm.firstChooseEndDate = val[1];
-  } else {
-    editForm.firstChooseStartDate = "";
-    editForm.firstChooseEndDate = "";
-  }
-  console.log(editForm.firstChooseStartDate, editForm.firstChooseEndDate);
-};
-const handleDateChange3 = (val) => {
-  if (val && val.length === 2) {
-    editForm.secondChooseStartDate = val[0];
-    editForm.secondChooseEndDate = val[1];
-  } else {
-    editForm.secondChooseStartDate = "";
-    editForm.secondChooseEndDate = "";
-  }
-  console.log(editForm.secondChooseStartDate, editForm.secondChooseEndDate);
-};
-const handleDateChange4 = (val) => {
-  if (val && val.length === 2) {
-    editForm.thirdChooseStartDate = val[0];
-    editForm.thirdChooseEndDate = val[1];
-  } else {
-    editForm.thirdChooseStartDate = "";
-    editForm.thirdChooseEndDate = "";
-  }
-  console.log(editForm.thirdChooseStartDate, editForm.thirdChooseEndDate);
-};
-const handleDateChange5 = (val) => {
-  if (val && val.length === 2) {
-    editForm.stdChooseStartDate = val[0];
-    editForm.stdChooseEndDate = val[1];
-  } else {
-    editForm.stdChooseStartDate = "";
-    editForm.stdChooseEndDate = "";
-  }
-  console.log(editForm.stdChooseStartDate, editForm.stdChooseEndDate);
-};
-
-const tableData = ref([]);
-
-const selectedUsers = ref([]);
-
-// 处理单个选择
-const handleSelect = (selection, row) => {
-  if (selection.includes(row)) {
-    // 添加选中
-    if (!selectedUsers.value.some((user) => user._id === row._id)) {
-      selectedUsers.value.push(row);
-    }
-  } else {
-    // 取消选中
-    selectedUsers.value = selectedUsers.value.filter(
-      (user) => user._id !== row._id,
-    );
-  }
-  console.log(selectedUsers.value);
-};
-
-// 处理全选
-const handleSelectAll = (selection) => {
-  if (selection.length > 0) {
-    // 修复1：使用userList替代tableData
-    const allUsers = userList.value;
-    // 修复2：基于_id的去重逻辑
-    const newSelections = allUsers.filter(
-      (user) => !selectedUsers.value.some((s) => s._id === user._id),
-    );
-    selectedUsers.value = [...selectedUsers.value, ...newSelections];
-  } else {
-    // 修复3：精确移除当前页选中项
-    const currentPageIds = paginatedUserData.value.map((item) => item._id);
-    selectedUsers.value = selectedUsers.value.filter(
-      (user) => !currentPageIds.includes(user._id),
-    );
-  }
-  // 新增调试日志
-  console.log(
-    "最终选中用户:",
-    selectedUsers.value.map((u) => u._id),
-  );
-};
-
-// 确保每次分页变化时更新表格的选中状态
-watch([currentPage2, pageSize2], async () => {
-  nextTick(() => {
-    paginatedUserData.value.forEach((row) => {
-      if (selectedUsers.value.some((user) => user._id === row._id)) {
-        tableRef.value.toggleRowSelection(row, true);
-      } else {
-        tableRef.value.toggleRowSelection(row, false);
-      }
-    });
-  });
-});
+// Table selection composable (for user dialog table)
+const { selectedItems: selectedUsers, handleSelect, handleSelectAll, clearSelection } = useTableSelection(tableRef, paginatedUserData, currentPage2, pageSize2);
 
 const dialogVisible4 = ref(false);
 const currentEditingRow = ref(null);
@@ -540,8 +385,6 @@ const handleSetMaxSelect = (row) => {
 const handleUpdateMaxSelectNum = async () => {
   try {
     // 调用API更新数据
-    console.log(currentEditingRow.value);
-
     const res = await axios.put("/api/admin/configMaxSelectNum", {
       activityId: currentEditingRow.value.activityId,
       teacherId: currentEditingRow.value.teacherId,
@@ -559,10 +402,7 @@ const handleUpdateMaxSelectNum = async () => {
     // await getActivityUsers(currentActivityId.value);
   } catch (error) {
     ElMessage.error("更新失败，请重试");
-    console.error("更新最大选择人数失败:", error);
   }
-
-  console.log(currentEditingRow.value.activityId);
 
   try {
     const res = await axios.get("api/admin/getUserListInActivity", {
@@ -570,7 +410,6 @@ const handleUpdateMaxSelectNum = async () => {
         activityId: currentEditingRow.value.activityId,
       },
     });
-    console.log(res.data);
     res.data.map((item) => {
       item.username = item.teacherId || item.studentId;
       item.role = item.teacherId
@@ -579,11 +418,9 @@ const handleUpdateMaxSelectNum = async () => {
         ? "student"
         : "admin";
     });
-    console.log(res.data);
 
     viewUserList.value = res.data;
   } catch (error) {
-    console.error("获取活动用户失败:", error);
     ElMessage.error("获取活动用户失败");
   }
 };
@@ -594,7 +431,6 @@ onMounted(async () => {
 const getTableData = async () => {
   const res = await axios.get("/api/admin/getActivityList");
 
-  console.log(res.data);
   res.data.forEach((item) => {
     item.startDate = formatISODateToLocal(item.startDate);
     item.endDate = formatISODateToLocal(item.endDate);
@@ -655,17 +491,22 @@ const editForm = reactive({
   stdChooseStartDate: "",
   stdChooseEndDate: "",
 });
+
+// Date range composables
+const activityDate = useDateRange(editForm, "startDate", "endDate");
+const firstChooseDate = useDateRange(editForm, "firstChooseStartDate", "firstChooseEndDate");
+const secondChooseDate = useDateRange(editForm, "secondChooseStartDate", "secondChooseEndDate");
+const thirdChooseDate = useDateRange(editForm, "thirdChooseStartDate", "thirdChooseEndDate");
+const stdChooseDate = useDateRange(editForm, "stdChooseStartDate", "stdChooseEndDate");
+
 //编辑活动
 const handleEdit = (row) => {
-  console.log(row);
-  console.log(editForm);
   Object.assign(editForm, row);
-  console.log(editForm);
-  tempDateRange1.value = [row.startDate, row.endDate];
-  tempDateRange2.value = [row.firstChooseStartDate, row.firstChooseEndDate];
-  tempDateRange3.value = [row.secondChooseStartDate, row.secondChooseEndDate];
-  tempDateRange4.value = [row.thirdChooseStartDate, row.thirdChooseEndDate];
-  tempDateRange5.value = [row.stdChooseStartDate, row.stdChooseEndDate];
+  activityDate.dateRange.value = [row.startDate, row.endDate];
+  firstChooseDate.dateRange.value = [row.firstChooseStartDate, row.firstChooseEndDate];
+  secondChooseDate.dateRange.value = [row.secondChooseStartDate, row.secondChooseEndDate];
+  thirdChooseDate.dateRange.value = [row.thirdChooseStartDate, row.thirdChooseEndDate];
+  stdChooseDate.dateRange.value = [row.stdChooseStartDate, row.stdChooseEndDate];
 
   dialogVisible.value = true;
 };
@@ -673,11 +514,7 @@ const handleEdit = (row) => {
 const saveEdit = () => {
   editFormRef.value.validate(async (valid) => {
     if (valid) {
-      console.log(123);
-      console.log(editForm);
-
       const res = await axios.put("api/admin/updateActivity", editForm);
-      console.log(res);
 
       if (res.data.code === 200) {
         ElMessage.success("修改成功");
@@ -691,7 +528,6 @@ const saveEdit = () => {
 };
 //删除活动
 const handleDelete = async (row) => {
-  console.log(row);
   const res = await axios.delete("/api/admin/deleteActivity", {
     data: {
       id: row._id,
@@ -707,7 +543,6 @@ const handleDelete = async (row) => {
 
 //查看活动用户
 const handleViewActivityUsers = async (row) => {
-  console.log(row);
   currentActivityId.value = row._id;
   dialogVisible3.value = true;
   try {
@@ -716,7 +551,6 @@ const handleViewActivityUsers = async (row) => {
         activityId: row._id,
       },
     });
-    console.log(res.data);
     res.data.map((item) => {
       item.username = item.teacherId || item.studentId;
       item.role = item.teacherId
@@ -725,18 +559,15 @@ const handleViewActivityUsers = async (row) => {
         ? "student"
         : "admin";
     });
-    console.log(res.data);
 
     viewUserList.value = res.data;
   } catch (error) {
-    console.error("获取活动用户失败:", error);
     ElMessage.error("获取活动用户失败");
   }
 };
 
 //添加用户至活动
 const handleAddUserToActivity = async (row) => {
-  // console.log(row);
   currentActivityId.value = row._id;
   dialogVisible2.value = true;
   try {
@@ -746,7 +577,6 @@ const handleAddUserToActivity = async (row) => {
         activityId: row._id,
       },
     });
-    // console.log(res.data);
     // 正确的过滤逻辑
     const filteredData = res.data.filter((item) => {
       // 检查item是否存在于res2.data中
@@ -756,8 +586,6 @@ const handleAddUserToActivity = async (row) => {
         );
       });
     });
-    // console.log(filteredData);
-
     userList.value = filteredData;
   } catch (error) {}
 };
@@ -774,9 +602,6 @@ const handleViewActivityDetails = (activityId) => {
 
 //确认添加
 const saveAddUser = async () => {
-  // console.log(currentActivityId.value);
-
-  // console.log(selectedUsers.value);
   Promise.all(
     selectedUsers.value.map(async (item) => {
       const res = await axios.post("api/admin/addTeacherToActivity", {
@@ -784,7 +609,6 @@ const saveAddUser = async () => {
         teacherId: item.role === "teacher" ? item.username : null,
         studentId: item.role === "student" ? item.username : null,
       });
-      console.log(res);
     }),
   );
   ElMessage.success(`添加成功${selectedUsers.value.length}个用户`);
@@ -825,7 +649,6 @@ const handleSearchInViewDialog = async () => {
       role: searchFormInViewDialog.role,
     },
   });
-  console.log(res.data);
   res.data.map((item) => {
     item.username = item.teacherId || item.studentId;
     item.role = item.teacherId
@@ -845,7 +668,6 @@ const resetSearchInViewDialog = () => {
 };
 //查看活动用户弹窗中删除用户
 const handleDeleteViewUser = async (row) => {
-  console.log(row);
   const res = await axios.delete("/api/admin/deleteUserInActivity", {
     data: {
       _id: row._id,
@@ -860,7 +682,6 @@ const handleDeleteViewUser = async (row) => {
 };
 //重置志愿
 const handleResetVolunteer = async (row) => {
-  console.log(row);
   const res = await axios.delete("/api/admin/resetVolunteer", {
     data: {
       activityId: row.activityId,

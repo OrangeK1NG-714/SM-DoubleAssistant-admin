@@ -90,7 +90,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch, nextTick } from "vue";
+import { ref, reactive, onMounted } from "vue";
+import { usePagination } from '@/composables/usePagination';
+import { useTableSelection } from '@/composables/useTableSelection';
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from "axios";
 import * as XLSX from 'xlsx';
@@ -98,26 +100,11 @@ import { useRoute } from "vue-router";
 
 const route = useRoute()
 const isSearchDisabled = ref(false); // 添加禁用状态
-const currentPage = ref(1);
-const pageSize = ref(10);
-const tableRef = ref(); // 添加表格引用
 
-// 分页相关函数
-const handlePageChange = (val) => {
-    currentPage.value = val;
-};
-
-const handleSizeChange = (val) => {
-    pageSize.value = val;
-    currentPage.value = 1; // 重置到第一页
-};
-
-// 计算当前页显示的数据
-const paginatedData = computed(() => {
-    const start = (currentPage.value - 1) * pageSize.value;
-    const end = start + pageSize.value;
-    return tableData.value.slice(start, end);
-});
+const tableRef = ref();
+const tableData = ref([]);
+const { currentPage, pageSize, paginatedData, handlePageChange, handleSizeChange } = usePagination(tableData);
+const { selectedItems: selectedUsers, handleSelect, handleSelectAll, clearSelection } = useTableSelection(tableRef, paginatedData, currentPage, pageSize);
 
 const searchForm = reactive({
     studentId: "",
@@ -150,14 +137,11 @@ const options = [
     },
 ];
 
-const tableData = ref([]);
-const selectedUsers = ref([]);
 const activityList = ref([]);
 const teacherList = ref([]);
 
 onMounted(async () => {
     if (route.query.activityId) {
-        console.log(123);
         searchForm.activityId = route.query.activityId;
         isSearchDisabled.value = true; // 设置禁用状态为true
         handleSearch();
@@ -171,10 +155,8 @@ onMounted(async () => {
 
 const getTableData = async () => {
     const res = await axios.get("/api/admin/getFinalList");
-    // console.log(res.data);
     tableData.value = res.data;
     const res1 = await axios.get("/api/admin/getActivityList");
-    // console.log(res1.data);
     activityList.value = res1.data;
     tableData.value.map(item => {
         res1.data.map(activity => {
@@ -187,65 +169,13 @@ const getTableData = async () => {
 
 const getTeacherList = async () => {
     const res = await axios.get("/api/teacher/detail");
-    // console.log(res.data.data, 12333);
     teacherList.value = res.data.data;
 }
-
-// 处理单个选择
-const handleSelect = (selection, row) => {
-    if (selection.includes(row)) {
-        // 添加选中
-        if (!selectedUsers.value.some(user => user._id === row._id)) {
-            selectedUsers.value.push(row);
-        }
-    } else {
-        // 取消选中
-        selectedUsers.value = selectedUsers.value.filter(user => user._id !== row._id);
-    }
-};
-
-// 处理全选
-const handleSelectAll = (selection) => {
-    if (selection.length > 0) {
-        // 全选当前页
-        const currentPageIds = paginatedData.value.map(item => item._id);
-
-        // 添加当前页选中项到selectedUsers（去重）
-        paginatedData.value.forEach(row => {
-            if (!selectedUsers.value.some(user => user._id === row._id)) {
-                selectedUsers.value.push(row);
-            }
-        });
-
-        // 确保所有数据都被选中（全选所有页）
-        selectedUsers.value = [...new Set([...selectedUsers.value, ...tableData.value])];
-    } else {
-        // 取消全选 - 只取消当前页的选中
-        const currentPageIds = paginatedData.value.map(item => item._id);
-        selectedUsers.value = selectedUsers.value.filter(user => !currentPageIds.includes(user._id));
-    }
-
-    // console.log('当前选中用户:', selectedUsers.value.length);
-};
-
-// 确保每次分页变化时更新表格的选中状态
-watch([currentPage, pageSize], async () => {
-    nextTick(() => {
-        paginatedData.value.forEach(row => {
-            if (selectedUsers.value.some(user => user._id === row._id)) {
-                tableRef.value.toggleRowSelection(row, true);
-            } else {
-                tableRef.value.toggleRowSelection(row, false);
-            }
-        });
-    });
-});
 
 //编辑回调
 const handleEdit = async (data) => {
     const res = await axios.get(`/adminapi/user/list/${data._id}`);
     Object.assign(userForm, res.data.data[0]);
-    // console.log(userForm);
     dialogVisible.value = true;
 };
 
@@ -264,11 +194,9 @@ const handleEditConfirm = () => {
 };
 
 const handleDelete = async (data) => {
-    // console.log(data);
     await axios.delete(`/adminapi/user/list/${data._id}`);
     getTableData();
 };
-
 
 //表单事件
 //搜索事件
@@ -278,7 +206,6 @@ const handleSearch = async () => {
     });
     tableData.value = res.data;
     const res1 = await axios.get("/api/admin/getActivityList");
-    // console.log(res1.data);
     activityList.value = res1.data;
     tableData.value.map(item => {
         res1.data.map(activity => {
@@ -304,7 +231,6 @@ const handleReset = () => {
     handleSearch();
 };
 
-
 // 导出选中数据
 const handleExport = async () => {
     if (selectedUsers.value.length === 0) {
@@ -317,14 +243,12 @@ const handleExport = async () => {
             activityId: selectedUsers.value[0].activityId,
         }
     });
-    console.log(res.data, 7788);
 
     const userList = await axios.get("/api/admin/getStudentListInActivity", {
         params: {
             activityId: selectedUsers.value[0].activityId,
         }
     })
-    console.log(userList.data, 112233);
 
     // 记录已选中的学生ID
     const selectedStudentIds = new Set(selectedUsers.value.map(item => item.studentId));

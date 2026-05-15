@@ -155,31 +155,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch, nextTick } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import axios from "axios";
+import { usePagination } from '@/composables/usePagination';
+import { useTableSelection } from '@/composables/useTableSelection';
 
-const currentPage = ref(1);
-const pageSize = ref(10);
-const tableRef = ref(); // 添加表格引用
+const tableRef = ref();
+const tableData = ref([]);
 
-// 分页相关函数
-const handlePageChange = (val) => {
-  currentPage.value = val;
-};
-
-const handleSizeChange = (val) => {
-  pageSize.value = val;
-  currentPage.value = 1; // 重置到第一页
-};
-
-// 计算当前页显示的数据
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return tableData.value.slice(start, end);
-});
+const { currentPage, pageSize, paginatedData, handlePageChange, handleSizeChange } = usePagination(tableData);
+const { selectedItems: selectedUsers, handleSelect, handleSelectAll, clearSelection } = useTableSelection(tableRef, paginatedData, currentPage, pageSize);
 
 const searchForm = reactive({
   username: "",
@@ -222,77 +209,20 @@ const options = [
   },
 ];
 
-const tableData = ref([]);
-const selectedUsers = ref([]);
-
 onMounted(async () => {
   await getTableData();
 });
 
 const getTableData = async () => {
   const res = await axios.get("/api/admin/getUserList");
-  console.log(res.data);
   tableData.value = res.data;
   return res.data;
 };
 
-// 处理单个选择
-const handleSelect = (selection, row) => {
-  if (selection.includes(row)) {
-    // 添加选中
-    if (!selectedUsers.value.some(user => user._id === row._id)) {
-      selectedUsers.value.push(row);
-    }
-  } else {
-    // 取消选中
-    selectedUsers.value = selectedUsers.value.filter(user => user._id !== row._id);
-  }
-};
-
-// 处理全选
-const handleSelectAll = (selection) => {
-  if (selection.length > 0) {
-    // 全选当前页
-    const currentPageIds = paginatedData.value.map(item => item._id);
-
-    // 添加当前页选中项到selectedUsers（去重）
-    paginatedData.value.forEach(row => {
-      if (!selectedUsers.value.some(user => user._id === row._id)) {
-        selectedUsers.value.push(row);
-      }
-    });
-
-    // 确保所有数据都被选中（全选所有页）
-    selectedUsers.value = [...new Set([...selectedUsers.value, ...tableData.value])];
-  } else {
-    // 取消全选 - 只取消当前页的选中
-    const currentPageIds = paginatedData.value.map(item => item._id);
-    selectedUsers.value = selectedUsers.value.filter(user => !currentPageIds.includes(user._id));
-  }
-
-  console.log('当前选中用户:', selectedUsers.value.length);
-};
-
-// 确保每次分页变化时更新表格的选中状态
-watch([currentPage, pageSize], async () => {
-  nextTick(() => {
-    paginatedData.value.forEach(row => {
-      if (selectedUsers.value.some(user => user._id === row._id)) {
-        tableRef.value.toggleRowSelection(row, true);
-      } else {
-        tableRef.value.toggleRowSelection(row, false);
-      }
-    });
-  });
-});
-
 //编辑回调
 const handleEdit = async (data) => {
-  console.log(data);
-  
   // const res = await axios.get(`/adminapi/user/list/${data._id}`);
   // Object.assign(userForm, res.data.data[0]);
-  // console.log(userForm);
   // dialogVisible.value = true;
 };
 
@@ -311,7 +241,6 @@ const handleEditConfirm = () => {
 };
 
 const handleDelete = async (data) => {
-  console.log(data);
   await axios.delete(`/adminapi/user/list/${data._id}`);
   getTableData();
 };
@@ -334,7 +263,6 @@ const handleResetPassword = async (data) => {
     selectedUsers.value = [];
     getTableData();
   }).catch(() => {
-    console.log('取消重置密码');
   });
 };
 
@@ -344,7 +272,6 @@ const handleSearch = async () => {
   const res = await axios.get("/api/admin/getUserInfo", {
     params: searchForm,
   });
-  console.log(res.data);
   tableData.value = res.data;
   selectedUsers.value = []; // 搜索时清空已选
 };
@@ -370,14 +297,10 @@ const handleResetAllPassword = async () => {
     type: 'warning'
   }).then(async () => {
     const selectedUserName = selectedUsers.value.map(user => user.username);
-    console.log(selectedUserName);
-
     const res = await axios.post(`/api/admin/resetSelectedPassword`, {
       selectedUsers: selectedUserName,
       password: "123456",
     });
-    console.log(res);
-
     if (res.data.code === 200) {
       ElMessage.success(`${selectedUserName.length}个用户密码重置成功`);
       selectedUsers.value = [];
@@ -386,13 +309,11 @@ const handleResetAllPassword = async () => {
     }
     getTableData();
   }).catch(() => {
-    console.log('取消重置密码');
   });
 };
 
 // 修改老师简历
 const handleUpdateIntroduction = async (data) => {
-  console.log(data);
   // 打开专门的简历上传弹窗
   introductionDialogVisible.value = true;
   
@@ -407,8 +328,6 @@ const handleUpdateIntroduction = async (data) => {
 
 // 文件选择变化处理
 const handleFileChange = (uploadFile, uploadFiles) => {
-  console.log('文件选择变化:', uploadFile);
-  
   // 清除之前的文件列表，只保留当前文件
   fileList.value = [];
   
@@ -516,7 +435,6 @@ const handleUpdateIntroductionConfirm = async () => {
     }
   } catch (error) {
     ElMessage.error('上传失败，请重试');
-    console.error('上传错误：', error);
   }
 };
 
@@ -537,8 +455,6 @@ const handleViewIntroduction = async (data) => {
       responseType: 'blob' // 设置响应类型为blob
     });
     
-    console.log('获取简历响应:', res);
-    console.log(res.data);
     // 检查响应是否为blob数据
     if (res.data && res.data instanceof Blob) {
       // 创建blob URL用于显示图片
@@ -555,7 +471,6 @@ const handleViewIntroduction = async (data) => {
     }
   } catch (error) {
     ElMessage.error('获取简历失败，请重试');
-    console.error('获取简历错误：', error);
   }
 };
 
