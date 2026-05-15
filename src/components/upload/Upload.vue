@@ -11,7 +11,7 @@
   </el-upload>
 </template>
 <script setup>
-import { defineEmits, defineProps, computed } from "vue";
+import { computed } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 
 // 定义 props
@@ -26,7 +26,7 @@ const emit = defineEmits(["kerwinchange"]);
 const uploadAvatar = computed(() =>
   props.avatar.includes("blob")
     ? props.avatar
-    : process.env.VUE_APP_UPLOAD_BASE + props.avatar
+    : import.meta.env.VITE_UPLOAD_BASE + props.avatar
 );
 //每次选择完图片后的回调
 const handleChange = (file) => {
@@ -36,7 +36,7 @@ const handleChange = (file) => {
 </script>
 
 <style lang="scss" scoped>
-::v-deep .el-upload {
+:deep(.el-upload) {
   border: 1px dashed var(--el-border-color);
   border-radius: 6px;
   cursor: pointer;
@@ -45,11 +45,11 @@ const handleChange = (file) => {
   transition: var(--el-transition-duration-fast);
 }
 
-::v-deep .el-upload:hover {
+:deep(.el-upload:hover) {
   border-color: var(--el-color-primary);
 }
 
-::v-deep .el-icon.avatar-uploader-icon {
+:deep(.el-icon.avatar-uploader-icon) {
   font-size: 28px;
   color: #8c939d;
   width: 178px;

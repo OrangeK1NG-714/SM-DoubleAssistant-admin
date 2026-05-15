@@ -22,7 +22,7 @@ const store = useStore();
 
 const avatarUrl = computed(() =>
   store.state.userInfo.avatar
-    ? process.env.VUE_APP_UPLOAD_BASE + store.state.userInfo.avatar
+    ? import.meta.env.VITE_UPLOAD_BASE + store.state.userInfo.avatar
     : `https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png`
 );
 
