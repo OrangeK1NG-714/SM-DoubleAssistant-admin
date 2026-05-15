@@ -1,58 +1,39 @@
-import Home from '../views/home/Home.vue'
-import Center from '../views/center/Center.vue'
-import NotFound from '@/views/notfound/NotFound.vue'
-import UserAdd from '../views/user-manage/addUser.vue'
-import UserList from '../views/user-manage/userList.vue'
-import ActivityList from '@/views/activity/activityList.vue'
-import addActivity from '@/views/activity/addActivity.vue'
-import selectVolunteerList from '@/views/volunteer/selectVolunteerList.vue'
-import finalVolunteerList from '@/views/volunteer/finalVolunteerList.vue'
-import volunteerAdd from '@/views/volunteer/volunteerAdd.vue'
-
-// import addVolunteer from '@/views/volunteer/addVolunteer.vue'
-
 const routes = [
     {
         path: "/index",
-        component: Home,
+        component: () => import('../views/home/Home.vue'),
     },
     {
         path: "/center",
-        component: Center,
+        component: () => import('../views/center/Center.vue'),
     },
     {
         path: "/user-manage/addUser",
-        component: UserAdd,
+        component: () => import('../views/user-manage/addUser.vue'),
     },
     {
         path: "/user-manage/userList",
-        component: UserList,
-    },
-    // {
-    //     path: "/show-dailyNecessities/EditDailyNecessities/:id",
-    //     component: DailyNecessitiesEdit,
-    //     requireAdmin: true
-    // },
-    {
-        path:"/activity/activityList",
-        component:ActivityList
+        component: () => import('../views/user-manage/userList.vue'),
     },
     {
-        path:"/activity/addActivity",
-        component:addActivity
+        path: "/activity/activityList",
+        component: () => import('@/views/activity/activityList.vue'),
     },
     {
-        path:"/volunteer/selectVolunteerList",
-        component:selectVolunteerList
+        path: "/activity/addActivity",
+        component: () => import('@/views/activity/addActivity.vue'),
     },
     {
-        path:"/volunteer/finalVolunteerList",
-        component:finalVolunteerList
+        path: "/volunteer/selectVolunteerList",
+        component: () => import('@/views/volunteer/selectVolunteerList.vue'),
     },
-
     {
-        path:"/volunteer/volunteerAdd",
-        component:volunteerAdd
+        path: "/volunteer/finalVolunteerList",
+        component: () => import('@/views/volunteer/finalVolunteerList.vue'),
+    },
+    {
+        path: "/volunteer/volunteerAdd",
+        component: () => import('@/views/volunteer/volunteerAdd.vue'),
     },
     {
         path: "/",
@@ -61,7 +42,7 @@ const routes = [
     {
         path: "/:pathMatch(.*)*",
         name: "Notfound",
-        component: NotFound
+        component: () => import('@/views/notfound/NotFound.vue'),
     }
 ]
 
