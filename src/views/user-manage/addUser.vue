@@ -72,11 +72,8 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, watch } from "vue";
-import Upload from "@/components/upload/Upload.vue";
-import upload from "@/util/upload.js";
+import { ref, reactive } from "vue";
 import { UploadFilled } from '@element-plus/icons-vue'
-import uploadExcel from "@/util/upload.ts";
 import { useRouter } from "vue-router";
 import { ElMessage } from 'element-plus';
 
@@ -93,9 +90,6 @@ import axios from "axios";
 const beforeUpload = async (file) => {
   try {
     const users = await parseExcel(file);
-    console.log(users);
-    console.log(file);
-    
     userBatchForm.users = users;
     ElMessage({
       message: `${file.name}上传成功`,
@@ -185,11 +179,6 @@ const teacherTypeOptions =[
     value: '2',
   },
 ]
-//每次选择完图片后的回调
-const handleChange = (file) => {
-  userForm.avatar = URL.createObjectURL(file);
-  userForm.file = file;
-};
 const router = useRouter()
 //更新单一新增
 const submitOneForm = () => {
@@ -205,7 +194,6 @@ const submitOneForm = () => {
 const submitBatchForm = () => {
   userFormRef.value.validate(async (valid) => {
     if (valid) {
-      console.log(userBatchForm);
       try {
         const results = await Promise.all(userBatchForm.users.map(async (user) => {
           return await axios.post("/api/admin/register", user);
