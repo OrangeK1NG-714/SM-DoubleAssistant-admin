@@ -44,19 +44,31 @@
 
     <!-- 添加多个用户 -->
     <template v-else>
-      <el-card>
-        <el-alert type="info" :closable="false" show-icon title="Excel格式要求">
-          <template #default>
-            <p>请上传 .xlsx 或 .xls 文件，表头需包含以下列：</p>
-            <ul style="margin: 8px 0; padding-left: 20px;">
-              <li><strong>学号/工号</strong> — 用户登录账号</li>
-              <li><strong>姓名</strong> — 用户真实姓名</li>
-              <li><strong>角色</strong> — 填写 "管理员"、"教师" 或 "学生"</li>
-            </ul>
-            <p>默认密码为 123456，用户可在登录后修改。</p>
+      <div class="batch-guide">
+        <el-card class="guide-card">
+          <el-alert type="info" :closable="false" show-icon title="Excel格式要求">
+            <template #default>
+              <p>请上传 .xlsx 或 .xls 文件，表头需包含以下列：</p>
+              <ul style="margin: 8px 0; padding-left: 20px;">
+                <li><strong>学号/工号</strong> — 用户登录账号</li>
+                <li><strong>姓名</strong> — 用户真实姓名</li>
+                <li><strong>角色</strong> — 填写 "管理员"、"教师" 或 "学生"</li>
+              </ul>
+              <p>默认密码为 123456，用户可在登录后修改。</p>
+            </template>
+          </el-alert>
+        </el-card>
+        <el-card class="example-card">
+          <template #header>
+            <span class="example-title">示例表格</span>
           </template>
-        </el-alert>
-      </el-card>
+          <el-table :data="exampleData" border size="small" class="example-table">
+            <el-table-column prop="id" label="学号/工号" align="center" />
+            <el-table-column prop="name" label="姓名" align="center" />
+            <el-table-column prop="role" label="角色" align="center" />
+          </el-table>
+        </el-card>
+      </div>
       <el-form ref="userFormRef" style="max-width: 600px" :model="userBatchForm" label-width="auto"
         class="demo-ruleForm" status-icon>
         <el-upload class="upload-demo" drag :before-upload="beforeUpload" accept=".xlsx, .xls" :show-file-list="false"
@@ -89,6 +101,13 @@ import { useDebounce } from "@/composables/useDebounce";
 import { ROLE_OPTIONS } from "@/constants/roles";
 
 const addMode = ref('single');
+
+const exampleData = [
+  { id: '2024001', name: '张三', role: '学生' },
+  { id: '2024002', name: '李四', role: '学生' },
+  { id: 'T1001', name: '王老师', role: '教师' },
+  { id: 'A0001', name: '赵管理', role: '管理员' },
+];
 
 import * as XLSX from 'xlsx';
 import axios from "axios";
@@ -202,6 +221,32 @@ const { run: doSubmitBatch, loading: submitBatchLoading } = useDebounce(async ()
 :deep(.el-radio-button__inner) {
   border: none !important;
   border-radius: 999px !important;
+}
+
+.batch-guide {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.guide-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.example-card {
+  flex: 0 0 340px;
+}
+
+.example-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--apple-text-secondary);
+}
+
+.example-table {
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 :deep(.el-upload-dragger) {
