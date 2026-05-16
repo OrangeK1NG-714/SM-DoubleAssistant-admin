@@ -40,6 +40,19 @@ export function useTableSelection(tableRef, paginatedData, currentPage, pageSize
 
   const clearSelection = () => {
     selectedItems.value = []
+    nextTick(() => {
+      tableRef.value?.clearSelection()
+    })
+  }
+
+  const selectAllItems = (allData) => {
+    selectedItems.value = [...allData]
+    nextTick(() => {
+      if (!tableRef.value) return
+      paginatedData.value.forEach(row => {
+        tableRef.value.toggleRowSelection(row, true)
+      })
+    })
   }
 
   return {
@@ -47,5 +60,6 @@ export function useTableSelection(tableRef, paginatedData, currentPage, pageSize
     handleSelect,
     handleSelectAll,
     clearSelection,
+    selectAllItems,
   }
 }

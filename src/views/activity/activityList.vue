@@ -206,8 +206,10 @@
       />
       <template #footer>
         <div class="dialog-footer">
+          <el-button @click="selectAllItems(userList)">全选所有 ({{ userList.length }})</el-button>
+          <el-button @click="clearSelection">取消全选</el-button>
           <el-button @click="dialogVisible2 = false">取消</el-button>
-          <el-button type="primary" :loading="saveAddUserLoading" @click="saveAddUser">确认添加</el-button>
+          <el-button type="primary" :loading="saveAddUserLoading" @click="saveAddUser">确认添加 ({{ selectedUsers.length }})</el-button>
         </div>
       </template>
     </el-dialog>
@@ -250,7 +252,10 @@
         :data="paginatedViewUserData"
         :row-key="(row) => row._id"
         ref="viewTableRef"
+        @select="handleViewSelect"
+        @select-all="handleViewSelectAll"
       >
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="username" label="用户名" />
         <el-table-column prop="role" label="角色">
           <template #default="scope">
@@ -310,6 +315,9 @@
       />
       <template #footer>
         <div class="dialog-footer">
+          <el-button @click="selectAllViewItems(viewUserList)">全选所有 ({{ viewUserList.length }})</el-button>
+          <el-button @click="clearViewSelection">取消全选</el-button>
+          <el-button type="danger" :loading="batchDeleteLoading" @click="handleBatchDeleteViewUser">批量删除所选用户 ({{ selectedViewUsers.length }})</el-button>
           <el-button @click="dialogVisible3 = false">关闭</el-button>
         </div>
       </template>
@@ -344,7 +352,7 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, nextTick } from "vue";
 import axios from "axios";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
@@ -372,7 +380,8 @@ const { currentPage: currentPage3, pageSize: pageSize3, paginatedData: paginated
 const userForm = ref([]);
 
 // Table selection composable (for user dialog table)
-const { selectedItems: selectedUsers, handleSelect, handleSelectAll, clearSelection } = useTableSelection(tableRef, paginatedUserData, currentPage2, pageSize2);
+const { selectedItems: selectedUsers, handleSelect, handleSelectAll, clearSelection, selectAllItems } = useTableSelection(tableRef, paginatedUserData, currentPage2, pageSize2);
+const { selectedItems: selectedViewUsers, handleSelect: handleViewSelect, handleSelectAll: handleViewSelectAll, clearSelection: clearViewSelection, selectAllItems: selectAllViewItems } = useTableSelection(viewTableRef, paginatedViewUserData, currentPage3, pageSize3);
 
 const dialogVisible4 = ref(false);
 const currentEditingRow = ref(null);
@@ -395,18 +404,18 @@ const { run: handleUpdateMaxSelectNum, loading: updateMaxSelectLoading } = useDe
   const res = await axios.get("/api/admin/getUserListInActivity", {
     params: { activityId: currentEditingRow.value.activityId },
   });
-  res.data.forEach((item) => {
+  res.data.data.forEach((item) => {
     item.username = item.teacherId || item.studentId;
     item.role = item.teacherId ? "teacher" : item.studentId ? "student" : "admin";
   });
-  viewUserList.value = res.data;
+  viewUserList.value = res.data.data;
 });
 
 onMounted(() => loadTableData());
 
 const { run: loadTableData, loading: tableLoading } = useLoading(async () => {
   const res = await axios.get("/api/admin/getActivityList");
-  res.data.forEach((item) => {
+  res.data.data.forEach((item) => {
     item.startDate = formatISODateToLocal(item.startDate);
     item.endDate = formatISODateToLocal(item.endDate);
     item.firstChooseEndDate = formatISODateToLocal(item.firstChooseEndDate);
@@ -418,7 +427,7 @@ const { run: loadTableData, loading: tableLoading } = useLoading(async () => {
     item.stdChooseEndDate = formatISODateToLocal(item.stdChooseEndDate);
     item.stdChooseStartDate = formatISODateToLocal(item.stdChooseStartDate);
   });
-  tableData.value = res.data;
+  tableData.value = res.data.data;
 });
 
 //将ISO日期字符串转换为本地日期字符串
@@ -513,6 +522,9 @@ const handleDelete = async (row) => {
 //查看活动用户
 const handleViewActivityUsers = async (row) => {
   currentActivityId.value = row._id;
+  searchFormInViewDialog.username = "";
+  searchFormInViewDialog.role = "";
+  clearViewSelection();
   dialogVisible3.value = true;
   try {
     const res = await axios.get("/api/admin/getUserListInActivity", {
@@ -520,7 +532,7 @@ const handleViewActivityUsers = async (row) => {
         activityId: row._id,
       },
     });
-    res.data.forEach((item) => {
+    res.data.data.forEach((item) => {
       item.username = item.teacherId || item.studentId;
       item.role = item.teacherId
         ? "teacher"
@@ -529,7 +541,7 @@ const handleViewActivityUsers = async (row) => {
         : "admin";
     });
 
-    viewUserList.value = res.data;
+    viewUserList.value = res.data.data;
   } catch (error) {
     ElMessage.error("获取活动用户失败");
   }
@@ -538,25 +550,24 @@ const handleViewActivityUsers = async (row) => {
 //添加用户至活动
 const handleAddUserToActivity = async (row) => {
   currentActivityId.value = row._id;
+  searchFormInDialog.username = "";
+  searchFormInDialog.role = "";
+  clearSelection();
   dialogVisible2.value = true;
   try {
-    const res = await axios.get("/api/admin/getUserList");
-    const res2 = await axios.get("/api/admin/getUserListInActivity", {
-      params: {
-        activityId: row._id,
-      },
-    });
-    // 正确的过滤逻辑
-    const filteredData = res.data.filter((item) => {
-      // 检查item是否存在于res2.data中
-      return !res2.data.some((item2) => {
-        return (
-          item.username === item2.studentId || item.username === item2.teacherId
-        );
-      });
-    });
-    userList.value = filteredData;
+    await loadFilteredUserList(row._id);
   } catch (error) {}
+};
+
+const loadFilteredUserList = async (activityId) => {
+  const [res, res2] = await Promise.all([
+    axios.get("/api/admin/getUserList"),
+    axios.get("/api/admin/getUserListInActivity", { params: { activityId } }),
+  ]);
+  const inActivity = res2.data.data;
+  userList.value = res.data.data.filter((item) =>
+    !inActivity.some((a) => item.username === a.studentId || item.username === a.teacherId)
+  );
 };
 //查看活动详情
 const handleViewActivityDetails = (activityId) => {
@@ -574,18 +585,24 @@ const { run: saveAddUser, loading: saveAddUserLoading } = useDebounce(async () =
     ElMessage.warning("请先选择要添加的用户");
     return;
   }
-  const count = selectedUsers.value.length;
-  await Promise.all(
-    selectedUsers.value.map((item) =>
-      axios.post("/api/admin/addTeacherToActivity", {
-        activityId: currentActivityId.value,
-        teacherId: item.role === "teacher" ? item.username : null,
-        studentId: item.role === "student" ? item.username : null,
-      })
-    ),
-  );
-  ElMessage.success(`添加成功${count}个用户`);
+  const users = selectedUsers.value.map((item) => ({
+    teacherId: item.role === "teacher" ? item.username : null,
+    studentId: item.role === "student" ? item.username : null,
+  }));
+  const res = await axios.post("/api/admin/batchAddUserToActivity", {
+    activityId: currentActivityId.value,
+    users,
+  });
+  const { successCount, failCount } = res.data.data;
+  clearSelection();
   dialogVisible2.value = false;
+  if (failCount === 0) {
+    ElMessage.success(`全部添加成功，共 ${successCount} 人`);
+  } else if (successCount === 0) {
+    ElMessage.error(`全部添加失败，共 ${failCount} 人`);
+  } else {
+    ElMessage.warning(`添加完成：成功 ${successCount} 人，失败 ${failCount} 人`);
+  }
 });
 
 //dialog中搜索用户
@@ -595,16 +612,20 @@ const searchFormInDialog = reactive({
 });
 //dialog中搜索用户
 const handleSearchInDialog = async () => {
-  const res = await axios.get("/api/admin/getUserInfo", {
-    params: searchFormInDialog,
-  });
-  userList.value = res.data;
+  const [res, res2] = await Promise.all([
+    axios.get("/api/admin/getUserInfo", { params: searchFormInDialog }),
+    axios.get("/api/admin/getUserListInActivity", { params: { activityId: currentActivityId.value } }),
+  ]);
+  const inActivity = res2.data.data;
+  userList.value = res.data.data.filter((item) =>
+    !inActivity.some((a) => item.username === a.studentId || item.username === a.teacherId)
+  );
 };
 //dialog中重置搜索
 const resetSearchInDialog = () => {
   searchFormInDialog.username = "";
   searchFormInDialog.role = "";
-  handleSearchInDialog();
+  loadFilteredUserList(currentActivityId.value);
 };
 
 //查看活动用户弹窗中搜索
@@ -622,7 +643,7 @@ const handleSearchInViewDialog = async () => {
       role: searchFormInViewDialog.role,
     },
   });
-  res.data.forEach((item) => {
+  res.data.data.forEach((item) => {
     item.username = item.teacherId || item.studentId;
     item.role = item.teacherId
       ? "teacher"
@@ -630,7 +651,7 @@ const handleSearchInViewDialog = async () => {
       ? "student"
       : "admin";
   });
-  viewUserList.value = res.data;
+  viewUserList.value = res.data.data;
 };
 
 //查看活动用户弹窗中重置搜索
@@ -653,6 +674,26 @@ const handleDeleteViewUser = async (row) => {
     ElMessage.error("删除失败");
   }
 };
+//批量删除活动用户
+const { run: handleBatchDeleteViewUser, loading: batchDeleteLoading } = useDebounce(async () => {
+  if (selectedViewUsers.value.length === 0) {
+    ElMessage.warning("请先选择要删除的用户");
+    return;
+  }
+  const ids = selectedViewUsers.value.map((item) => item._id);
+  const res = await axios.post("/api/admin/batchDeleteUserInActivity", { ids });
+  const { successCount, failCount } = res.data.data;
+  if (failCount === 0) {
+    ElMessage.success(`全部删除成功，共 ${successCount} 人`);
+  } else if (successCount === 0) {
+    ElMessage.error(`全部删除失败，共 ${failCount} 人`);
+  } else {
+    ElMessage.warning(`删除完成：成功 ${successCount} 人，失败 ${failCount} 人`);
+  }
+  clearViewSelection();
+  handleSearchInViewDialog();
+});
+
 //重置志愿
 const handleResetVolunteer = async (row) => {
   const res = await axios.delete("/api/admin/resetVolunteer", {
