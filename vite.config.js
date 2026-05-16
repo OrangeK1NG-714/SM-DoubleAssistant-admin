@@ -37,6 +37,9 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    holdUntilCrawlEnd: false,
+  },
   build: {
     sourcemap: false,
     rollupOptions: {
