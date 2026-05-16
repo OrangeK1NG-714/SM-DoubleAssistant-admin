@@ -107,7 +107,6 @@ const options = [
   },
 ];
 
-//每次选择完图片后的回调
 const handleChange = (file) => {
   userForm.avatar = URL.createObjectURL(file);
   userForm.file = file;

@@ -292,7 +292,6 @@
                 <el-button size="small" type="danger"> 重置志愿 </el-button>
               </template>
             </el-popconfirm>
-            <!-- 增加一个form，需要输入老师的最大选择人数 -->
             <el-button
               type="primary"
               @click="handleSetMaxSelect(scope.row)"
@@ -318,6 +317,7 @@
           <el-button @click="selectAllViewItems(viewUserList)">全选所有 ({{ viewUserList.length }})</el-button>
           <el-button @click="clearViewSelection">取消全选</el-button>
           <el-button type="danger" :loading="batchDeleteLoading" @click="handleBatchDeleteViewUser">批量删除所选用户 ({{ selectedViewUsers.length }})</el-button>
+          <el-button type="warning" @click="handleBatchSetMaxSelect">一键设置老师最大选择人数</el-button>
           <el-button @click="dialogVisible3 = false">关闭</el-button>
         </div>
       </template>
@@ -352,9 +352,9 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, onMounted, nextTick } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import axios from "axios";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { useRouter } from "vue-router";
 import { usePagination } from "@/composables/usePagination";
 import { useTableSelection } from "@/composables/useTableSelection";
@@ -372,24 +372,38 @@ const userList = ref([]);
 const viewUserList = ref([]);
 const currentActivityId = ref("");
 
-// Pagination composables
 const { currentPage, pageSize, paginatedData, handlePageChange, handleSizeChange } = usePagination(tableData);
 const { currentPage: currentPage2, pageSize: pageSize2, paginatedData: paginatedUserData, handlePageChange: handlePageChange2, handleSizeChange: handleSizeChange2 } = usePagination(userList);
 const { currentPage: currentPage3, pageSize: pageSize3, paginatedData: paginatedViewUserData, handlePageChange: handlePageChange3, handleSizeChange: handleSizeChange3 } = usePagination(viewUserList);
 
-const userForm = ref([]);
-
-// Table selection composable (for user dialog table)
 const { selectedItems: selectedUsers, handleSelect, handleSelectAll, clearSelection, selectAllItems } = useTableSelection(tableRef, paginatedUserData, currentPage2, pageSize2);
 const { selectedItems: selectedViewUsers, handleSelect: handleViewSelect, handleSelectAll: handleViewSelectAll, clearSelection: clearViewSelection, selectAllItems: selectAllViewItems } = useTableSelection(viewTableRef, paginatedViewUserData, currentPage3, pageSize3);
 
 const dialogVisible4 = ref(false);
 const currentEditingRow = ref(null);
 
-// 处理设置最大选择人数
 const handleSetMaxSelect = (row) => {
   currentEditingRow.value = { ...row }; // 创建副本避免直接修改原数据
   dialogVisible4.value = true;
+};
+
+const handleBatchSetMaxSelect = async () => {
+  try {
+    const { value } = await ElMessageBox.prompt("请输入所有老师的最大选择学生数", "一键设置", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      inputPattern: /^[1-9]\d*$/,
+      inputErrorMessage: "请输入正整数",
+    });
+    await axios.put("/api/admin/batchConfigMaxSelectNum", {
+      activityId: currentActivityId.value,
+      maxSelectNum: Number(value),
+    });
+    ElMessage.success("一键设置成功");
+    handleSearchInViewDialog();
+  } catch {
+    // cancelled
+  }
 };
 
 const { run: handleUpdateMaxSelectNum, loading: updateMaxSelectLoading } = useDebounce(async () => {
@@ -430,7 +444,6 @@ const { run: loadTableData, loading: tableLoading } = useLoading(async () => {
   tableData.value = res.data.data;
 });
 
-//将ISO日期字符串转换为本地日期字符串
 function formatISODateToLocal(isoString) {
   // 1. 创建Date对象
   const date = new Date(isoString);
@@ -452,9 +465,9 @@ const editFormRules = reactive({
   description: [{ required: true, message: "请输入活动描述", trigger: "blur" }],
 });
 
-const dialogVisible = ref(false); //编辑活动弹窗
-const dialogVisible2 = ref(false); //添加用户至活动弹窗
-const dialogVisible3 = ref(false); //查看活动用户弹窗
+const dialogVisible = ref(false);
+const dialogVisible2 = ref(false);
+const dialogVisible3 = ref(false);
 
 const editFormRef = ref();
 
@@ -474,14 +487,12 @@ const editForm = reactive({
   stdChooseEndDate: "",
 });
 
-// Date range composables
 const activityDate = useDateRange(editForm, "startDate", "endDate");
 const firstChooseDate = useDateRange(editForm, "firstChooseStartDate", "firstChooseEndDate");
 const secondChooseDate = useDateRange(editForm, "secondChooseStartDate", "secondChooseEndDate");
 const thirdChooseDate = useDateRange(editForm, "thirdChooseStartDate", "thirdChooseEndDate");
 const stdChooseDate = useDateRange(editForm, "stdChooseStartDate", "stdChooseEndDate");
 
-//编辑活动
 const handleEdit = (row) => {
   Object.assign(editForm, row);
   activityDate.dateRange.value = [row.startDate, row.endDate];
@@ -504,7 +515,6 @@ const { run: saveEdit, loading: saveEditLoading } = useDebounce(async () => {
     ElMessage.error("修改失败");
   }
 });
-//删除活动
 const handleDelete = async (row) => {
   const res = await axios.delete("/api/admin/deleteActivity", {
     data: {
@@ -519,7 +529,6 @@ const handleDelete = async (row) => {
   }
 };
 
-//查看活动用户
 const handleViewActivityUsers = async (row) => {
   currentActivityId.value = row._id;
   searchFormInViewDialog.username = "";
@@ -547,7 +556,6 @@ const handleViewActivityUsers = async (row) => {
   }
 };
 
-//添加用户至活动
 const handleAddUserToActivity = async (row) => {
   currentActivityId.value = row._id;
   searchFormInDialog.username = "";
@@ -569,7 +577,6 @@ const loadFilteredUserList = async (activityId) => {
     !inActivity.some((a) => item.username === a.studentId || item.username === a.teacherId)
   );
 };
-//查看活动详情
 const handleViewActivityDetails = (activityId) => {
   // 跳转到最终志愿列表页面，并携带活动id
   router.push({
@@ -605,12 +612,10 @@ const { run: saveAddUser, loading: saveAddUserLoading } = useDebounce(async () =
   }
 });
 
-//dialog中搜索用户
 const searchFormInDialog = reactive({
   username: "",
   role: "",
 });
-//dialog中搜索用户
 const handleSearchInDialog = async () => {
   const [res, res2] = await Promise.all([
     axios.get("/api/admin/getUserInfo", { params: searchFormInDialog }),
@@ -621,20 +626,16 @@ const handleSearchInDialog = async () => {
     !inActivity.some((a) => item.username === a.studentId || item.username === a.teacherId)
   );
 };
-//dialog中重置搜索
 const resetSearchInDialog = () => {
   searchFormInDialog.username = "";
   searchFormInDialog.role = "";
   loadFilteredUserList(currentActivityId.value);
 };
 
-//查看活动用户弹窗中搜索
 const searchFormInViewDialog = reactive({
   username: "",
   role: "",
 });
-
-//查看活动用户弹窗中搜索
 const handleSearchInViewDialog = async () => {
   const res = await axios.get("/api/admin/getUserListInActivity", {
     params: {
@@ -654,13 +655,11 @@ const handleSearchInViewDialog = async () => {
   viewUserList.value = res.data.data;
 };
 
-//查看活动用户弹窗中重置搜索
 const resetSearchInViewDialog = () => {
   searchFormInViewDialog.username = "";
   searchFormInViewDialog.role = "";
   handleSearchInViewDialog();
 };
-//查看活动用户弹窗中删除用户
 const handleDeleteViewUser = async (row) => {
   const res = await axios.delete("/api/admin/deleteUserInActivity", {
     data: {
@@ -674,7 +673,6 @@ const handleDeleteViewUser = async (row) => {
     ElMessage.error("删除失败");
   }
 };
-//批量删除活动用户
 const { run: handleBatchDeleteViewUser, loading: batchDeleteLoading } = useDebounce(async () => {
   if (selectedViewUsers.value.length === 0) {
     ElMessage.warning("请先选择要删除的用户");
@@ -694,7 +692,6 @@ const { run: handleBatchDeleteViewUser, loading: batchDeleteLoading } = useDebou
   handleSearchInViewDialog();
 });
 
-//重置志愿
 const handleResetVolunteer = async (row) => {
   const res = await axios.delete("/api/admin/resetVolunteer", {
     data: {
@@ -711,10 +708,6 @@ const handleResetVolunteer = async (row) => {
 };
 </script>
 <style lang="scss" scoped>
-.el-table {
-  margin-top: 30px;
-}
-
 :deep(.el-table) {
   margin-top: 30px;
 }

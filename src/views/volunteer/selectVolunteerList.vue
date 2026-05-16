@@ -21,7 +21,7 @@
             </div>
 
             <el-table :data="paginatedData" v-loading="tableLoading" style="width: 100%"
-                :row-key="row => row._id" ref="tableRef">
+                :row-key="row => row._id">
 
                 <el-table-column prop="studentId" label="学生学号" width="auto" />
                 <el-table-column prop="teacherId" label="老师工号" width="auto" />
@@ -75,7 +75,6 @@ import axios from "axios";
 import { usePagination } from '@/composables/usePagination';
 import { useLoading } from '@/composables/useLoading';
 
-const tableRef = ref();
 const tableData = ref([]);
 const activityList = ref([]);
 

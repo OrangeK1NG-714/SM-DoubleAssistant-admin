@@ -66,7 +66,7 @@ const loginRules = reactive({
 });
 
 const router = useRouter();
-const particlesLoaded = async () => {};
+const particlesLoaded = () => {};
 
 const { run: doLogin, loading: loginLoading } = useDebounce(async () => {
   await loginFormRef.value.validate();

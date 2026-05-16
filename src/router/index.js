@@ -23,15 +23,6 @@ const router = createRouter({
   routes
 })
 
-router.addRoute("MainBox", {
-  path: "/index",
-  component: () => import('../views/home/Home.vue')
-})
-router.addRoute("MainBox", {
-  path: "/center",
-  component: () => import('../views/center/Center.vue')
-})
-
 router.beforeEach((to, from, next) => {
   if (to.name === "login") {
     next()

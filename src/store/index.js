@@ -7,13 +7,10 @@ export default createStore({
     isCollapsed: false,
     userInfo: {}
   },
-  getters: {
-  },
   mutations: {
     changeGetterRouter(state, value) {
       state.isGetterRouter = value
     },
-    //控制侧边栏的展开
     changeCollapsed(state) {
       state.isCollapsed = !state.isCollapsed;
     },
@@ -27,11 +24,7 @@ export default createStore({
       state.userInfo = {}
     }
   },
-  actions: {
-  },
-  modules: {
-  },
   plugins: [createPersistedState({
-    paths: ["isCollapsed", "userInfo"]//控制是否持久化
+    paths: ["isCollapsed", "userInfo"]
   })],
 })
