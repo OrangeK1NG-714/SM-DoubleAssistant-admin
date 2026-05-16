@@ -111,7 +111,7 @@
               :auto-upload="false"
               :on-change="handleFileChange"
               :before-upload="beforeUpload"
-              accept=".jpg,.jpeg,.png,.gif,.pdf"
+              accept=".jpg,.jpeg,.png,.gif"
               :show-file-list="true"
               :file-list="fileList"
             >
@@ -119,7 +119,7 @@
               <div class="el-upload__text">点击或拖拽文件到此处上传</div>
               <template #tip>
                 <div class="el-upload__tip">
-                  请上传JPG、JPEG、PNG、GIF格式的图片文件，大小不超过5MB
+                  请上传 JPG、JPEG、PNG、GIF 格式的图片文件，大小不超过 5MB
                 </div>
               </template>
             </el-upload>
@@ -162,7 +162,6 @@ import axios from "axios";
 import { usePagination } from '@/composables/usePagination';
 import { useTableSelection } from '@/composables/useTableSelection';
 import { useDebounce } from '@/composables/useDebounce';
-import { useLoading } from '@/composables/useLoading';
 import { ROLE_OPTIONS } from '@/constants/roles';
 
 const tableRef = ref();
@@ -178,17 +177,16 @@ const searchForm = reactive({
 
 const dialogVisible = ref(false);
 const userFormRef = ref();
-let userForm = reactive({
+const userForm = reactive({
   username: "",
   password: "",
   role: "student",
   introduction: "",
 });
 
-// 老师简历相关变量
 const introductionDialogVisible = ref(false);
 const introductionFormRef = ref();
-let introductionForm = reactive({
+const introductionForm = reactive({
   teacherId: "",
   resumeName: "",
   resumePath: "",
@@ -234,7 +232,6 @@ const handleDelete = async (data) => {
   ElMessage.warning("删除功能暂未开放");
 };
 
-//重置密码
 const handleResetPassword = async (data) => {
   ElMessageBox.confirm('确认重置密码吗？', '提示', {
     confirmButtonText: '确定',
@@ -255,8 +252,6 @@ const handleResetPassword = async (data) => {
   });
 };
 
-//表单事件
-//搜索事件
 const handleSearch = async () => {
   const res = await axios.get("/api/admin/getUserInfo", {
     params: searchForm,
@@ -265,7 +260,6 @@ const handleSearch = async () => {
   selectedUsers.value = []; // 搜索时清空已选
 };
 
-//重置事件
 const handleReset = () => {
   searchForm.username = "";
   searchForm.role = "";
@@ -273,7 +267,6 @@ const handleReset = () => {
   getTableData();
 };
 
-//一键重置所有用户密码
 const handleResetAllPassword = async () => {
   if (selectedUsers.value.length === 0) {
     ElMessage.warning('请先选择要重置密码的用户');
@@ -301,7 +294,6 @@ const handleResetAllPassword = async () => {
   });
 };
 
-// 修改老师简历
 const handleUpdateIntroduction = async (data) => {
   // 打开专门的简历上传弹窗
   introductionDialogVisible.value = true;
@@ -315,7 +307,6 @@ const handleUpdateIntroduction = async (data) => {
   fileList.value = [];
 };
 
-// 文件选择变化处理
 const handleFileChange = (uploadFile, uploadFiles) => {
   // 清除之前的文件列表，只保留当前文件
   fileList.value = [];
@@ -335,35 +326,6 @@ const handleFileChange = (uploadFile, uploadFiles) => {
   ElMessage.success('文件已选择，可以点击确认修改上传');
 };
 
-// 移除文件处理
-const handleRemoveFile = (uploadFile, uploadFiles) => {
-  // 释放blob URL以避免内存泄漏
-  if (introductionForm.resumePath && introductionForm.resumePath.startsWith('blob:')) {
-    URL.revokeObjectURL(introductionForm.resumePath);
-  }
-  // 清除相关数据
-  introductionForm.uploadedFile = null;
-  introductionForm.resumeName = '';
-  introductionForm.resumePath = '';
-  fileList.value = [];
-};
-
-// 修改简历对话框关闭时的处理函数
-const handleIntroductionDialogClose = () => {
-  // 释放blob URL以避免内存泄漏
-  if (introductionForm.resumePath && introductionForm.resumePath.startsWith('blob:')) {
-    URL.revokeObjectURL(introductionForm.resumePath);
-  }
-  
-  // 清除相关数据
-  introductionForm.teacherId = '';
-  introductionForm.uploadedFile = null;
-  introductionForm.resumeName = '';
-  introductionForm.resumePath = '';
-  fileList.value = [];
-};
-
-// 上传前验证
 const beforeUpload = (file) => {
   const isImage = /\.(jpg|jpeg|png|gif)$/.test(file.name.toLowerCase());
   const isLt5M = file.size / 1024 / 1024 < 5;
@@ -399,7 +361,6 @@ const { run: doResumeUpload, loading: resumeUploadLoading } = useDebounce(async 
   }
 });
 
-// 查看老师简历对话框相关
 const viewIntroductionDialogVisible = ref(false);
 const viewIntroductionForm = reactive({
   resumePath: '',
@@ -435,7 +396,6 @@ const handleViewIntroduction = async (data) => {
   }
 };
 
-// 关闭查看简历对话框时释放资源
 const handleViewIntroductionDialogClose = () => {
   // 释放blob URL以避免内存泄漏
   if (viewIntroductionForm.resumePath && viewIntroductionForm.resumePath.startsWith('blob:')) {
@@ -446,10 +406,6 @@ const handleViewIntroductionDialogClose = () => {
 </script>
 
 <style lang="scss" scoped>
-.el-table {
-  margin-top: 18px;
-}
-
 .introduction-container {
   padding: 20px 0;
 }

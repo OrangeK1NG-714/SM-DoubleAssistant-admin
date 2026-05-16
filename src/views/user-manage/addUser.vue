@@ -86,38 +86,25 @@ import { UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from "vue-router";
 import { ElMessage } from 'element-plus';
 import { useDebounce } from "@/composables/useDebounce";
+import { ROLE_OPTIONS } from "@/constants/roles";
 
-//切换添加模式
 const addMode = ref('single');
 
-
-
-// 添加xlsx引入
 import * as XLSX from 'xlsx';
 import axios from "axios";
 
-// 修改beforeUpload方法
 const beforeUpload = async (file) => {
   try {
     const users = await parseExcel(file);
     userBatchForm.users = users;
-    ElMessage({
-      message: `${file.name}上传成功`,
-      type: 'success',
-    })
-    // const res = await axios.post('/adminapi/user/batch', {
-    //   users,
-    // });
-    // ElMessage.success(`成功创建${users.length}个用户`);
-    // router.push('/user-manage/userList');
-    return false; // 阻止默认上传
+    ElMessage.success(`${file.name}上传成功`);
+    return false;
   } catch (error) {
     ElMessage.error('文件解析失败');
     return false;
   }
 };
 
-// 完善Excel解析方法
 const parseExcel = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -129,7 +116,7 @@ const parseExcel = (file) => {
 
       const users = jsonData.map(row => ({
         username: row['学号/工号'],
-        password: '123456', // 假设密码字段
+        password: '123456',
         role: row['角色'] === '管理员' ? 'admin' :
           row['角色'] === '教师' ? 'teacher' : 'student',
         name: row['姓名'],
@@ -148,8 +135,9 @@ const userFormRef = ref();
 const userForm = reactive({
   username: "",
   password: "",
-  role: '', //admin是管理员，teacher是老师，student是学生
+  role: '',
   name: '',
+  teacherType: '',
 });
 const userBatchForm = reactive({
   users: [],
@@ -161,20 +149,7 @@ const userFormRules = reactive({
   role: [{ required: true, message: "请选择角色", trigger: "blur" }],
 });
 
-const options = [
-  {
-    label: "管理员",
-    value: 'admin',
-  },
-  {
-    label: "老师",
-    value: 'teacher',
-  },
-  {
-    label: "学生",
-    value: 'student',
-  },
-];
+const options = ROLE_OPTIONS;
 const teacherTypeOptions =[
   {
     label: "专业导师",
