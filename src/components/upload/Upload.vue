@@ -14,24 +14,21 @@
 import { computed } from "vue";
 import { Plus } from "@element-plus/icons-vue";
 
-// 定义 props
 const props = defineProps({
   avatar: String,
 });
 
-// 定义 emit 事件
 const emit = defineEmits(["kerwinchange"]);
 
-// 处理图片路径
-const uploadAvatar = computed(() =>
-  props.avatar.includes("blob")
+const uploadAvatar = computed(() => {
+  if (!props.avatar) return "";
+  return props.avatar.includes("blob")
     ? props.avatar
-    : import.meta.env.VITE_UPLOAD_BASE + props.avatar
-);
-//每次选择完图片后的回调
+    : import.meta.env.VITE_UPLOAD_BASE + props.avatar;
+});
+
 const handleChange = (file) => {
   emit("kerwinchange", file.raw);
-
 };
 </script>
 
@@ -59,6 +56,5 @@ const handleChange = (file) => {
 .avatar {
   width: 178px;
   height: 178px;
-  // display: block;
 }
 </style>

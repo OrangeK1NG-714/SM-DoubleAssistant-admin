@@ -89,11 +89,11 @@ onMounted(async () => {
     if (route.query.activityId) {
         searchForm.activityId = route.query.activityId;
         isSearchDisabled.value = true;
-        handleSearch();
+        await handleSearch();
     } else {
         await loadTableData();
-        await getTeacherList();
     }
+    await getTeacherList();
 });
 
 const enrichWithActivityName = (data, activities) => {
@@ -133,8 +133,6 @@ const handleDelete = async (data) => {
     } catch { /* global interceptor handles error toast */ }
 };
 
-//表单事件
-//搜索事件
 const handleSearch = async () => {
     const res = await axios.get("/api/admin/getFinalList", {
         params: searchForm,
@@ -145,7 +143,6 @@ const handleSearch = async () => {
     enrichWithActivityName(tableData.value, res1.data.data);
 };
 
-//重置事件
 const handleReset = () => {
     if (isSearchDisabled.value) {
         searchForm.studentId = "";
@@ -160,7 +157,6 @@ const handleReset = () => {
     handleSearch();
 };
 
-// 导出选中数据
 const handleExport = async () => {
     if (selectedUsers.value.length === 0) {
         ElMessage.warning('请选择要导出的数据');

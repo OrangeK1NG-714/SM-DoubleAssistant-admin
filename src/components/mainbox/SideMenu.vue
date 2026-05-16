@@ -34,7 +34,7 @@
         <el-menu-item index="/user-manage/userList">用户列表</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu index="/activity">
+      <el-sub-menu index="/activity" v-admin>
         <template #title>
           <el-icon>
             <Menu />
@@ -45,7 +45,7 @@
         <el-menu-item index="/activity/activityList">活动列表</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu index="/volunteer">
+      <el-sub-menu index="/volunteer" v-admin>
         <template #title>
           <el-icon>
             <Menu />
