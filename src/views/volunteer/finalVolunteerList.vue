@@ -108,10 +108,10 @@ const enrichWithActivityName = (data, activities) => {
 
 const { run: loadTableData, loading: tableLoading } = useLoading(async () => {
     const res = await axios.get("/api/admin/getFinalList");
-    tableData.value = res.data;
+    tableData.value = res.data.data;
     const res1 = await axios.get("/api/admin/getActivityList");
-    activityList.value = res1.data;
-    enrichWithActivityName(tableData.value, res1.data);
+    activityList.value = res1.data.data;
+    enrichWithActivityName(tableData.value, res1.data.data);
 });
 
 const getTeacherList = async () => {
@@ -139,10 +139,10 @@ const handleSearch = async () => {
     const res = await axios.get("/api/admin/getFinalList", {
         params: searchForm,
     });
-    tableData.value = res.data;
+    tableData.value = res.data.data;
     const res1 = await axios.get("/api/admin/getActivityList");
-    activityList.value = res1.data;
-    enrichWithActivityName(tableData.value, res1.data);
+    activityList.value = res1.data.data;
+    enrichWithActivityName(tableData.value, res1.data.data);
 };
 
 //重置事件
@@ -183,7 +183,7 @@ const handleExport = async () => {
     const selectedStudentIds = new Set(selectedUsers.value.map(item => item.studentId));
 
     // 找出落选的学生
-    const unselectedStudents = userList.data.filter(student => !selectedStudentIds.has(student.studentId));
+    const unselectedStudents = userList.data.data.filter(student => !selectedStudentIds.has(student.studentId));
 
     // 准备导出数据 - 按照你提供的Excel格式
     const exportData = []
@@ -199,7 +199,7 @@ const handleExport = async () => {
     const teachersWithStudents = {};
     
     // 首先构建导师-学生的映射关系
-    res.data.forEach(teacher => {
+    res.data.data.forEach(teacher => {
         const students = selectedUsers.value.filter(item => item.teacherId === teacher.teacherId);
         if (students.length > 0) {
             teachersWithStudents[teacher.teacherId] = {

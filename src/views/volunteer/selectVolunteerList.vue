@@ -108,15 +108,15 @@ const sortByTimeAndOrder = (data) => {
 
 const { run: loadTableData, loading: tableLoading } = useLoading(async () => {
     const res = await axios.get("/api/admin/getSelectedList");
-    sortByTimeAndOrder(res.data);
-    tableData.value = res.data.map(item => ({
+    sortByTimeAndOrder(res.data.data);
+    tableData.value = res.data.data.map(item => ({
         ...item,
         createTime: dayjs(item.createTime).format('YYYY-MM-DD HH:mm:ss')
     }));
 
     const res1 = await axios.get("/api/admin/getActivityList");
-    activityList.value = res1.data;
-    enrichWithActivityName(tableData.value, res1.data);
+    activityList.value = res1.data.data;
+    enrichWithActivityName(tableData.value, res1.data.data);
 });
 
 const handleToggleChose = async (row) => {
@@ -149,14 +149,14 @@ const handleSearch = async () => {
     const res = await axios.get("/api/admin/getSelectedList", {
         params: searchForm,
     });
-    sortByTimeAndOrder(res.data);
-    tableData.value = res.data.map(item => ({
+    sortByTimeAndOrder(res.data.data);
+    tableData.value = res.data.data.map(item => ({
         ...item,
         createTime: dayjs(item.createTime).format('YYYY-MM-DD HH:mm:ss')
     }));
     const res1 = await axios.get("/api/admin/getActivityList");
-    activityList.value = res1.data;
-    enrichWithActivityName(tableData.value, res1.data);
+    activityList.value = res1.data.data;
+    enrichWithActivityName(tableData.value, res1.data.data);
 };
 
 const handleReset = () => {

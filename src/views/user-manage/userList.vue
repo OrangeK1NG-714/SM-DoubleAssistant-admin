@@ -209,8 +209,8 @@ onMounted(async () => {
 
 const getTableData = async () => {
   const res = await axios.get("/api/admin/getUserList");
-  tableData.value = res.data;
-  return res.data;
+  tableData.value = res.data.data;
+  return res.data.data;
 };
 
 const handleEdit = (data) => {
@@ -261,7 +261,7 @@ const handleSearch = async () => {
   const res = await axios.get("/api/admin/getUserInfo", {
     params: searchForm,
   });
-  tableData.value = res.data;
+  tableData.value = res.data.data;
   selectedUsers.value = []; // 搜索时清空已选
 };
 

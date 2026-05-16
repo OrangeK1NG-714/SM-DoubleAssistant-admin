@@ -51,15 +51,15 @@ const { run: loadStats, loading: statsLoading } = useLoading(async () => {
     axios.get("/api/admin/getSelectedList"),
     axios.get("/api/admin/getFinalList"),
   ]);
-  const users = usersRes.data;
+  const users = usersRes.data.data;
   stats.value = {
     users: users.length,
     admins: users.filter(u => u.role === "admin").length,
     teachers: users.filter(u => u.role === "teacher").length,
     students: users.filter(u => u.role === "student").length,
-    activities: activitiesRes.data.length,
-    selections: selectionsRes.data.length,
-    finals: finalsRes.data.length,
+    activities: activitiesRes.data.data.length,
+    selections: selectionsRes.data.data.length,
+    finals: finalsRes.data.data.length,
   };
 });
 
