@@ -30,7 +30,7 @@ axios.interceptors.response.use(
             store.commit("clearUserInfo");
             window.location.href = "#/login";
         } else {
-            const message = error.response.data?.message || error.message || "请求失败";
+            const message = error.response.data?.msg || error.response.data?.message || error.message || "请求失败";
             ElMessage.error(message);
         }
         return Promise.reject(error);

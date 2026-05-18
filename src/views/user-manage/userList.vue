@@ -229,14 +229,18 @@ const { run: handleEditConfirm, loading: editLoading } = useDebounce(async () =>
 });
 
 const handleDelete = async (data) => {
-  const res = await axios.delete("/api/admin/deleteUser", {
-    data: { id: data._id },
-  });
-  if (res.data.code === 200) {
-    ElMessage.success("删除成功");
-    getTableData();
-  } else {
-    ElMessage.error(res.data.msg || "删除失败");
+  try {
+    const res = await axios.delete("/api/admin/deleteUser", {
+      data: { id: data._id },
+    });
+    if (res.data.code === 200) {
+      ElMessage.success("删除成功");
+      getTableData();
+    } else {
+      ElMessage.error(res.data.msg || "删除失败");
+    }
+  } catch (err) {
+    // axios interceptor already shows the error message
   }
 };
 
