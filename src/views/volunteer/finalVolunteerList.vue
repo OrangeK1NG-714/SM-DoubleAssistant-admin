@@ -26,6 +26,7 @@
                     <el-button type="primary" @click="handleSearch">搜索</el-button>
                     <el-button type="default" @click="handleReset">重置</el-button>
                     <el-button type="success" @click="handleExport">导出选中</el-button>
+                    <el-button type="primary" @click="addDialogVisible = true">添加录取</el-button>
                 </div>
             </div>
 
@@ -55,6 +56,35 @@
                 @size-change="handleSizeChange" @current-change="handlePageChange" class="pagination-wrapper" />
         </el-card>
 
+        <el-dialog v-model="addDialogVisible" title="添加录取记录" width="480px" @close="resetAddForm">
+            <el-form :model="addForm" label-width="80px">
+                <el-form-item label="活动">
+                    <el-select v-model="addForm.activityId" placeholder="请选择活动" filterable
+                        @change="handleActivityChange" style="width: 100%">
+                        <el-option v-for="item in activityList" :key="item._id" :label="item.name"
+                            :value="item._id" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="老师">
+                    <el-select v-model="addForm.teacherId" placeholder="请先选择活动" filterable
+                        :disabled="!addForm.activityId" style="width: 100%">
+                        <el-option v-for="item in addTeacherOptions" :key="item.teacherId"
+                            :label="`${item.name}（${item.teacherId}）`" :value="item.teacherId" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="学生">
+                    <el-select v-model="addForm.studentId" placeholder="请先选择活动" filterable
+                        :disabled="!addForm.activityId" style="width: 100%">
+                        <el-option v-for="item in addStudentOptions" :key="item.studentId"
+                            :label="`${item.data?.name || '未填写'}（${item.studentId}）`" :value="item.studentId" />
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="addDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="handleAddFinal" :loading="addLoading">确定</el-button>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
@@ -84,6 +114,64 @@ const searchForm = reactive({
 
 const activityList = ref([]);
 const teacherList = ref([]);
+
+const addDialogVisible = ref(false);
+const addLoading = ref(false);
+const addForm = reactive({
+    activityId: "",
+    teacherId: "",
+    studentId: "",
+});
+const addTeacherOptions = ref([]);
+const addStudentOptions = ref([]);
+
+const handleActivityChange = async (activityId) => {
+    addForm.teacherId = "";
+    addForm.studentId = "";
+    addTeacherOptions.value = [];
+    addStudentOptions.value = [];
+    if (!activityId) return;
+    const [teacherRes, studentRes] = await Promise.all([
+        axios.get("/api/admin/getTeacherListInActivity", { params: { activityId } }),
+        axios.get("/api/admin/getStudentListInActivity", { params: { activityId } }),
+    ]);
+    addTeacherOptions.value = teacherRes.data.data;
+    addStudentOptions.value = studentRes.data.data;
+};
+
+const resetAddForm = () => {
+    addForm.activityId = "";
+    addForm.teacherId = "";
+    addForm.studentId = "";
+    addTeacherOptions.value = [];
+    addStudentOptions.value = [];
+};
+
+const handleAddFinal = async () => {
+    if (!addForm.activityId || !addForm.teacherId || !addForm.studentId) {
+        ElMessage.warning("请填写完整信息");
+        return;
+    }
+    addLoading.value = true;
+    try {
+        const res = await axios.post("/api/admin/addFinal", {
+            activityId: addForm.activityId,
+            studentId: addForm.studentId,
+            teacherId: addForm.teacherId,
+        });
+        if (res.data.code === 200) {
+            ElMessage.success("添加成功");
+            addDialogVisible.value = false;
+            loadTableData();
+        } else {
+            ElMessage.error(res.data.msg || "添加失败");
+        }
+    } catch {
+        /* global interceptor handles error toast */
+    } finally {
+        addLoading.value = false;
+    }
+};
 
 onMounted(async () => {
     if (route.query.activityId) {
