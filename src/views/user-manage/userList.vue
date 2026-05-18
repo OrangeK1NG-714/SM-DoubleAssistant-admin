@@ -229,7 +229,15 @@ const { run: handleEditConfirm, loading: editLoading } = useDebounce(async () =>
 });
 
 const handleDelete = async (data) => {
-  ElMessage.warning("删除功能暂未开放");
+  const res = await axios.delete("/api/admin/deleteUser", {
+    data: { id: data._id },
+  });
+  if (res.data.code === 200) {
+    ElMessage.success("删除成功");
+    getTableData();
+  } else {
+    ElMessage.error(res.data.msg || "删除失败");
+  }
 };
 
 const handleResetPassword = async (data) => {
